@@ -5,7 +5,7 @@ var sqlite3 = sqlite.verbose();
 import md5 from "md5";
 import { db_run } from "./helpers/dbAsync.js";
 const isInTest = typeof global.it === "function";
-const DBSOURCE = isInTest ? "db_test.sqlite" : "db.sqlite";
+const DBSOURCE = isInTest ? "./db_test.sqlite" : "./db.sqlite";
 
 let db = new sqlite3.Database(DBSOURCE, (err) => {
   if (err) {
