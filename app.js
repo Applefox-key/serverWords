@@ -10,7 +10,7 @@ import * as usr from "./models/usersM.js";
 import { User } from "./classes/User.js";
 //const express = require("express");
 export const app = express();
-const port = 8000;
+const port = 9002;
 process.env.TZ = "Etc/Universal"; // UTC +00:00
 // var cors = require("cors");
 app.use(cors());
@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(unless(autorisation, "POST/users/login", "POST/users"));
 
 app.get("/", (req, res, next) => {
-  res.json({ message: "Ok" });
+  res.status(200).json({ message: "Ok" });
 });
 app.use("/users", userRouter);
 app.use("/expressions", phraseRouter);
