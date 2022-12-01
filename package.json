@@ -36,5 +36,11 @@
     "transform": {
       "\\.js$": "babel-jest"
     }
-  }
+  },
+  "development": {
+    "client": "sqlite3",
+    "connection": {
+    "filename": "./db.sqlite"
+    }
+
 }
