@@ -6,8 +6,8 @@
   "main": "server.js",
   "engines":{"node":"14.x"},
   "scripts": {
-    "devStart": " nodemon server.js",
-    "start": " node server.js",
+    "start": "node server.js",
+    "devStart": "nodemon server.js",
     "test": "jest"
     
   },
