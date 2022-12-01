@@ -17,9 +17,12 @@ app.use(cors());
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(unless(autorisation, "POST/users/login", "POST/users"));
+app.use(unless(autorisation, "POST/users/login", "POST/users", "GET/Home"));
 
 app.get("/", (req, res, next) => {
+  res.status(200).json({ message: "Ok" });
+});
+app.get("/Home", (req, res, next) => {
   res.status(200).json({ message: "Ok" });
 });
 app.use("/users", userRouter);
