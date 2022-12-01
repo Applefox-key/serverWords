@@ -1,0 +1,37 @@
+{
+  "name": "projectserver",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "devStart": " nodemon server.js",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "md5": "^2.3.0",
+    "sqlite3": "^5.1.2"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "*",
+    "babel-jest": "^29.3.1",
+    "jest": "^29.3.1",
+    "nodemon": "^2.0.20",
+    "supertest": "^6.3.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transformIgnorePatterns": [
+      "node_modules/(?!variables/.*)"
+    ],
+    "transform": {
+      "\\.js$": "babel-jest"
+    }
+  }
+}
