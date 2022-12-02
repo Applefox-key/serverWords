@@ -26,14 +26,20 @@ export const db_all = async (query, param) => {
   });
 };
 export const db_run = async (query, param) => {
-  return await new Promise((resolve, reject) => {
-    db.run(query, param, (err) => {
-      if (err) {
-        reject(err.error ? err : { error: err.message });
-      }
-      resolve({ message: "success" });
+  try {
+    return await new Promise((resolve, reject) => {
+      db.run(query, param, (err) => {
+        if (err) {
+          reject(err.error ? err : { error: err.message });
+        }
+        resolve({ message: "success" });
+      });
     });
-  });
+  } catch (error) {
+    console.log("catch error " + error.message);
+
+    return { error: error.message };
+  }
 };
 
 // db.run(

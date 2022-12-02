@@ -26,6 +26,8 @@ export const getUnreadListByToken = async () => {
 
 export const createExpression = async (set) => {
   const userid = User.getInstance().user.id;
+  const categoryid = set.hasOwnProperty("categoryid") ? set.categoryid : null;
+
   return await db_run(
     `INSERT INTO expressions (expression, stage, phrase, history,nextDate,userid,categoryid) VALUES (?,?,?,?,?,?,?)`,
     [
@@ -35,14 +37,15 @@ export const createExpression = async (set) => {
       JSON.stringify([{ action: "add", date: new Date() }]),
       Date.now(),
       userid,
-      set.categoryid,
+      categoryid,
     ]
   );
 };
 
 export const deleteExpression = async (id) => {
   const userid = User.getInstance().user.id;
-  if (id !== "*") params.push(id);
+  console.log(userid);
+
   let res = await db_run(
     `DELETE FROM expressions WHERE userid = ${userid} ${
       id === "*" ? "" : " AND id = " + id
@@ -75,7 +78,6 @@ export const updateExpression = async (set) => {
       set.id,
     ]; //one
   }
-  console.log(dataUpd);
   let res = await db_run(
     `UPDATE expressions set 
     expression = COALESCE(?,expression), 
@@ -87,6 +89,5 @@ export const updateExpression = async (set) => {
     WHERE id = ?`,
     [...dataUpd]
   );
-
   return res;
 };

@@ -4,17 +4,19 @@
   "description": "",
   "type": "module",
   "main": "index.js",
-  "engines":{"node":"14.x"},
+  "engines": {
+    "node": "14.x"
+  },
   "scripts": {
     "start": "node index.js",
     "devStart": "nodemon index.js",
     "test": "jest"
-    
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
@@ -40,7 +42,7 @@
   "development": {
     "client": "sqlite3",
     "connection": {
-    "filename": "./db.sqlite"
-    }}
-
+      "filename": "./db.sqlite"
+    }
+  }
 }

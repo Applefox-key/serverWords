@@ -12,46 +12,51 @@ app.use(bodyParser.json());
 
 //Get user's all collections with content
 router.get("/", async (req, res, next) => {
-  let result = await common.getAllWithContent(req.query);
-  // if (!result) {
-  //   res.status(400).json({ error: "bad request" });
-  //   return;
-  // }
-
   try {
+    let result = await common.getAllWithContent(req.query);
     let resArr = common.formatCollectionContent(result);
     res.status(200).json({ data: resArr });
   } catch (error) {
-    res.status(400).json({ error: error });
-    return;
+    res.status(400).json({ error: error.message });
   }
 });
 
 //Edit content by content date with id
 router.patch("/", async (req, res, next) => {
-  let result = await con.editContent({ ...req.body.data });
-  res
-    .status(result.error ? 400 : 200)
-    .json(result.error ? { error: result.error } : { message: "success" });
+  try {
+    let result = await con.editContent({ ...req.body.data });
+    res
+      .status(result.error ? 400 : 200)
+      .json(result.error ? { error: result.error } : { message: "success" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 //Get one content item  by id
 router.get("/:id", async (req, res, next) => {
-  let result = await con.getOneContentItem(req.params.id);
-  if (!result) {
-    res.status(400).json({ error: "bad request" });
-    return;
+  try {
+    let result = await con.getOneContentItem(req.params.id);
+    if (!result) {
+      res.status(400).json({ error: "bad request" });
+      return;
+    }
+    res.status(200).json({ data: result });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
-
-  res.status(200).json({ data: result });
 });
 
 //delete one item by id
 router.delete("/:id", async (req, res, next) => {
-  let result = await con.deleteItem(req.params.id);
-  res
-    .status(result.error ? 400 : 200)
-    .json(result.error ? { error: result.error } : { message: "success" });
+  try {
+    let result = await con.deleteItem(req.params.id);
+    res
+      .status(result.error ? 400 : 200)
+      .json(result.error ? { error: result.error } : { message: "success" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 export default router;
