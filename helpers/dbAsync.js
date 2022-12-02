@@ -11,9 +11,14 @@ export const db_get = async (query, param) => {
   });
 };
 export const db_all = async (query, param) => {
+  console.log("query");
+  console.log(query);
+
   return await new Promise((resolve, reject) => {
     db.all(query, param, (err, rows) => {
       if (err) {
+        console.log("err");
+        console.log(err);
         reject(err.error ? err : { error: err.message });
       }
       resolve(rows);

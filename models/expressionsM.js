@@ -75,7 +75,7 @@ export const updateExpression = async (set) => {
       set.id,
     ]; //one
   }
-
+  console.log(dataUpd);
   let res = await db_run(
     `UPDATE expressions set 
     expression = COALESCE(?,expression), 
@@ -83,10 +83,9 @@ export const updateExpression = async (set) => {
     phrase = COALESCE(?,phrase), 
     history = COALESCE(?,history),
     nextDate = COALESCE(?,nextDate),
-    category = COALESCE(?,category),
-
-             WHERE id = ?`,
-    dataUpd
+    categoryid = COALESCE(?,categoryid)
+    WHERE id = ?`,
+    [...dataUpd]
   );
 
   return res;
