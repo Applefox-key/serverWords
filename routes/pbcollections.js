@@ -15,7 +15,8 @@ router.post("/", async (req, res, next) => {
   try {
     let resp = await pbcol.createPbCollection({
       name: req.body.data.name,
-      categoryid: req.body.data.categoryid,
+      // categoryid: req.body.data.categoryid,
+      category: req.body.data.category,
       note: req.body.data.note,
     });
     if (resp.error) {

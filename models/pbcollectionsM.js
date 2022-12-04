@@ -6,9 +6,9 @@ import * as categ from "./categoriesM.js";
 export const createPbCollection = async (set) => {
   let categoryid = null;
 
-  if (!!set.categoryid)
-    categoryid = await categ.getPbCategoryFromUser(set.categoryid).id;
-
+  // if (!!set.categoryid)
+  //   categoryid = await categ.getPbCategoryFromUser(set.categoryid).id;
+  if (!!set.category) category = await createPbCategory(set.category);
   const userid = User.getInstance().user.id;
   return await db_get(
     `INSERT INTO pbcollections (name, note, userid,categoryid) VALUES (?,?,?,?) RETURNING pbcollections.id`,
