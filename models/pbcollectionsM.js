@@ -5,19 +5,19 @@ import * as categ from "./categoriesM.js";
 
 export const createPbCollection = async (set) => {
   let categoryid = null;
-  console.log("set");
-  console.log(set);
+  // console.log("set");
+  // console.log(set);
 
   // if (!!set.categoryid)
   //   categoryid = await categ.getPbCategoryFromUser(set.categoryid).id;
   if (!!set.category) {
     let category = await categ.createPbCategory(set.category);
-    console.log("category");
-    console.log(category);
+    // console.log("category");
+    // console.log(category);
     categoryid = category.id;
   }
-  console.log("categoryid");
-  console.log(categoryid);
+  // console.log("categoryid");
+  // console.log(categoryid);
 
   const userid = User.getInstance().user.id;
   return await db_get(
