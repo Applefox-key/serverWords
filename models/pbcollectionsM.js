@@ -10,7 +10,15 @@ export const createPbCollection = async (set) => {
 
   // if (!!set.categoryid)
   //   categoryid = await categ.getPbCategoryFromUser(set.categoryid).id;
-  if (!!set.category) category = await createPbCategory(set.category);
+  if (!!set.category) {
+    let category = await categ.createPbCategory(set.category);
+    console.log("category");
+    console.log(category);
+    categoryid = category.id;
+  }
+  console.log("categoryid");
+  console.log(categoryid);
+
   const userid = User.getInstance().user.id;
   return await db_get(
     `INSERT INTO pbcollections (name, note, userid,categoryid) VALUES (?,?,?,?) RETURNING pbcollections.id`,
