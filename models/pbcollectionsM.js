@@ -5,6 +5,8 @@ import * as categ from "./categoriesM.js";
 
 export const createPbCollection = async (set) => {
   let categoryid = null;
+  console.log("set");
+  console.log(set);
 
   // if (!!set.categoryid)
   //   categoryid = await categ.getPbCategoryFromUser(set.categoryid).id;
