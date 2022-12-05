@@ -49,7 +49,17 @@ router.post("/", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
-
+//all by userid
+router.delete("/", async (req, res, next) => {
+  try {
+    let result = await exp.deleteAllExpressions();
+    res
+      .status(result.error ? 400 : 200)
+      .json(result.error ? { error: result.error } : { message: "success" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 //user's list
 router.get("/", async (req, res, next) => {
   try {

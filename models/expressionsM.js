@@ -61,7 +61,11 @@ export const deleteExpression = async (id) => {
   );
   return res;
 };
-
+export const deleteAllExpressions = async () => {
+  const userid = User.getInstance().user.id;
+  let res = await db_run(`DELETE FROM expressions WHERE userid = ${userid}`);
+  return res;
+};
 export const updateExpression = async (set) => {
   let dataUpd;
   //expression, stage, phrase, history,nextDate,id
