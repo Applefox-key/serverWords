@@ -1,6 +1,17 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
 import { User } from "../classes/User.js";
 
+//all by admin
+export const getAllCategories = async (isPublic = false) => {
+  try {
+    if (isPublic)
+      return await db_get(`SELECT * FROM categories userid is NULL`);
+    return await db_get(`SELECT * FROM categories WHERE userid != NULL`);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 //get one by name
 export const getCategoryByName = async (name, isPublic = false) => {
   if (isPublic)

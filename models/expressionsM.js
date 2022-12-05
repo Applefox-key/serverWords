@@ -2,11 +2,21 @@ import { db_run, db_all } from "../helpers/dbAsync.js";
 import md5 from "md5";
 import { User } from "../classes/User.js";
 
+//all by admin
+export const getAllUsersExpressions = async () => {
+  try {
+    const res = await db_all("SELECT * FROM expressions");
+    if (res) return res;
+    return "";
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 export const getList = async () => {
   const userid = User.getInstance().user.id;
 
   const rows = await db_all(
-    "select * from expressions where userid = " + userid
+    "SELECT * FROM expressions where userid = " + userid
   );
   if (!rows) return [];
   return rows;
@@ -44,8 +54,6 @@ export const createExpression = async (set) => {
 
 export const deleteExpression = async (id) => {
   const userid = User.getInstance().user.id;
-  console.log(userid);
-
   let res = await db_run(
     `DELETE FROM expressions WHERE userid = ${userid} ${
       id === "*" ? "" : " AND id = " + id

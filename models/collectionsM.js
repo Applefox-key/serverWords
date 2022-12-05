@@ -1,5 +1,16 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
 import { User } from "../classes/User.js";
+
+//all by admin
+export const getAllUsersCollections = async () => {
+  try {
+    const res = await db_all("SELECT * FROM collections");
+    if (res) return res;
+    return "";
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 //get users all collections without content
 export const getAll = async () => {
   const userid = User.getInstance().user.id;

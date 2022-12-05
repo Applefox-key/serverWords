@@ -1,15 +1,23 @@
 // var db = require("../database.js");
 // var md5 = require("md5");
-import { db_run, db_get } from "../helpers/dbAsync.js";
+import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
 import md5 from "md5";
 import * as dotenv from "dotenv";
 import { User } from "../classes/User.js";
 dotenv.config();
 
+export const getAllUsers = async () => {
+  try {
+    const res = await db_all("SELECT * FROM users");
+    if (res) return res;
+    return "";
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 export const getUserByEmail = async (email) => {
   try {
-    const res = await db_get("select * from users where email = ?", [email]);
-
+    const res = await db_get("SELECT * FROM users where email = ?", [email]);
     if (res) return res;
     return "";
   } catch (error) {
@@ -18,7 +26,7 @@ export const getUserByEmail = async (email) => {
 };
 export const getUserById = async (id) => {
   try {
-    const res = await db_get("select * from users where id = ?", [id]);
+    const res = await db_get("SELECT * FROM users WHERE id = ?", [id]);
     if (res) return res;
     return "";
   } catch (error) {
@@ -27,17 +35,17 @@ export const getUserById = async (id) => {
 };
 export const getUserByToken = async (token) => {
   try {
-    const session = await db_get("select * from sessions where token = ?", [
+    const session = await db_get("SELECT * FROM sessions WHERE token = ?", [
       token,
     ]);
     if (!session) return;
-    const row = await db_get("select * from users where id = ?", [
+    const row = await db_get("SELECT * FROM users WHERE id = ?", [
       session.userid,
     ]);
     if (!row) return;
     return row;
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return { error: error.message };
   }
 };
 export const createToken = async (userid) => {

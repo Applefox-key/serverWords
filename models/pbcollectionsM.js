@@ -5,19 +5,11 @@ import * as categ from "./categoriesM.js";
 
 export const createPbCollection = async (set) => {
   let categoryid = null;
-  // console.log("set");
-  // console.log(set);
-
-  // if (!!set.categoryid)
-  //   categoryid = await categ.getPbCategoryFromUser(set.categoryid).id;
   if (!!set.category) {
     let category = await categ.createPbCategory(set.category);
-    // console.log("category");
-    // console.log(category);
+
     categoryid = category.id;
   }
-  // console.log("categoryid");
-  // console.log(categoryid);
 
   const userid = User.getInstance().user.id;
   return await db_get(
@@ -87,7 +79,7 @@ export const getOneWithContent = async (id) => {
 
 //get users all collections (list)
 export const getAll = async () => {
-  const rows = await db_all("select * from pbcollections ");
+  const rows = await db_all("SELECT * FROM pbcollections ");
   if (!rows) return [];
   return rows;
 };
@@ -95,14 +87,14 @@ export const getAll = async () => {
 export const getAllByUser = async () => {
   const userid = User.getInstance().user.id;
   const rows = await db_all(
-    "select * from pbcollections WHERE userid=" + userid
+    "SELECT * FROM pbcollections WHERE userid=" + userid
   );
   if (!rows) return [];
   return rows;
 };
 //get one collection by id
 export const getOne = async (id) => {
-  const row = await db_get("select * from pbcollections where id = ? ", [id]);
+  const row = await db_get("SELECT * FROM pbcollections WHERE id = ? ", [id]);
   if (!row) return [];
   return row;
 };

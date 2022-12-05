@@ -74,7 +74,23 @@ router.get("/", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
+//all by admin token
+router.get("/all", async (req, res, next) => {
+  try {
+    let user = User.getInstance().user;
 
+    if (user.role !== "admin") {
+      res.status(400).json({ error: "access denied" });
+    }
+    let list = await usr.getAllUsers();
+
+    res
+      .status(!list ? 400 : 200)
+      .json(!list ? { error: "session not found" } : { data: list });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 //login by email without token
 router.post("/login", async (req, res, next) => {
   try {

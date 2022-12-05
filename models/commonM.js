@@ -49,9 +49,9 @@ export const getAllWithContent = async (select = "") => {
 
   // ${queryPart}
   const rows = await db_all(
-    `SELECT collections.id , collections.name as name, categoryid, collections.note, 
-    categories.name as category, 
-    content.note as note_cont, content.id as id_cont, question,answer 
+    `SELECT collections.id , collections.name AS name, categoryid, collections.note, 
+    categories.name AS category, 
+    content.note AS note_cont, content.id AS id_cont, question,answer 
        FROM collections  LEFT JOIN  content 
        ON collections.id = content.collectionid
        LEFT JOIN  categories  
@@ -67,7 +67,7 @@ export const getAllWithContent = async (select = "") => {
 //get users all collections with content
 export const getAllWithContentByCategory = async (catid) => {
   const rows = await db_all(
-    `SELECT collections.id , name, categoryid, collections.note, content.note as note_cont, content.id as id_cont, question,answer 
+    `SELECT collections.id , name, categoryid, collections.note, content.note AS note_cont, content.id AS id_cont, question,answer 
        FROM collections  LEFT JOIN  content 
        ON collections.id = content.collectionid
        WHERE categoryid = ? `,
@@ -80,9 +80,9 @@ export const getAllWithContentByCategory = async (catid) => {
 export const getOneWithContent = async (id) => {
   const userid = User.getInstance().user.id;
   const rows = await db_all(
-    `SELECT collections.id, collections.note, collections.name as name,categoryid,
-          categories.name as category, 
-          question, answer, content.note as note_cont, content.id as id_cont 
+    `SELECT collections.id, collections.note, collections.name AS name,categoryid,
+          categories.name AS category, 
+          question, answer, content.note AS note_cont, content.id AS id_cont 
     FROM collections  
     LEFT JOIN  content  
     ON collections.id = content.collectionid

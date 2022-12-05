@@ -2,12 +2,43 @@ import * as categ from "../models/categoriesM.js";
 import * as common from "../models/commonM.js";
 import express from "express";
 import bodyParser from "body-parser";
+import { User } from "../classes/User.js";
 
 const router = express.Router();
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+//all by admin token
+router.get("/public/all", async (req, res, next) => {
+  try {
+    let user = User.getInstance().user;
+    if (user.role !== "admin") {
+      res.status(400).json({ error: "access denied" });
+    }
+    let list = await categ.getAllCategories(true);
+    res
+      .status(!list ? 400 : 200)
+      .json(!list ? { error: "categiries not found" } : { data: list });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+//all by admin token
+router.get("/users/all", async (req, res, next) => {
+  try {
+    let user = User.getInstance().user;
+    if (user.role !== "admin") {
+      res.status(400).json({ error: "access denied" });
+    }
+    let list = await categ.getAllCategories();
+    res
+      .status(!list ? 400 : 200)
+      .json(!list ? { error: "session not found" } : { data: list });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 //get all
 router.get("/user", async (req, res, next) => {
   try {
