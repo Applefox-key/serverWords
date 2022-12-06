@@ -5,14 +5,15 @@ import { User } from "../classes/User.js";
 //get users one content item by id
 export const getOneContentItem = async (id) => {
   // const userid = User.getInstance().user.id;
-  const row = await db_get("select * from content where id = ? ", [id]);
+  const row = await db_get("SELECT * FROM content WHERE id = ? ", [id]);
   if (!row) return {};
   return row;
 };
 //get users one content item by id
 export const getOnePbContentItem = async (id) => {
   // const userid = User.getInstance().user.id;
-  const row = await db_get("select * from pbcontent where id = ? ", [id]);
+  const row = await db_get("SELECT * FROM pbcontent WHERE id = ? ", [id]);
+
   if (!row) return {};
   return row;
 };
