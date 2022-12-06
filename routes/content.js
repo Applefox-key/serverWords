@@ -33,7 +33,7 @@ router.patch("/", async (req, res, next) => {
   }
 });
 //Get one pub content item  by id
-router.get("pub/:id", async (req, res, next) => {
+router.get("/pub/:id", async (req, res, next) => {
   try {
     let result = await con.getOnePbContentItem(req.params.id);
     if (!result) {
