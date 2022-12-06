@@ -32,7 +32,19 @@ router.patch("/", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
-
+//Get one pub content item  by id
+router.get("pub/:id", async (req, res, next) => {
+  try {
+    let result = await con.getOnePbContentItem(req.params.id);
+    if (!result) {
+      res.status(400).json({ error: "bad request" });
+      return;
+    }
+    res.status(200).json({ data: result });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 //Get one content item  by id
 router.get("/:id", async (req, res, next) => {
   try {

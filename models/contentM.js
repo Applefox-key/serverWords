@@ -9,7 +9,13 @@ export const getOneContentItem = async (id) => {
   if (!row) return {};
   return row;
 };
-
+//get users one content item by id
+export const getOnePbContentItem = async (id) => {
+  // const userid = User.getInstance().user.id;
+  const row = await db_get("select * from pbcontent where id = ? ", [id]);
+  if (!row) return {};
+  return row;
+};
 export const editContent = async (set, id) => {
   return await db_run(
     `UPDATE content set
