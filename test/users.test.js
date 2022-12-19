@@ -1,7 +1,7 @@
 import request from "supertest";
 import app from "../app.js";
 
-import { login } from "../models/usersM.js";
+import { login } from "../moduls/usersM.js";
 // .set({ "Authorization": `Bearer 16694170186811` })
 
 describe("GET /users", () => {

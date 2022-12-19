@@ -6,13 +6,13 @@ import collectionsRouter from "./routes/collections.js";
 import contentRouter from "./routes/content.js";
 import pbcollectionsRouter from "./routes/pbcollections.js";
 import categoriesRouter from "./routes/categories.js";
-import * as usr from "./models/usersM.js";
+import * as usr from "./moduls/usersM.js";
 import { User } from "./classes/User.js";
-//const express = require("express");
+
 export const app = express();
 const port = 9002;
+// const port = 8000;
 process.env.TZ = "Etc/Universal"; // UTC +00:00
-// var cors = require("cors");
 app.use(cors());
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
@@ -55,8 +55,16 @@ export async function autorisation(req, res, next) {
 }
 export function unless(middleware, ...paths) {
   return async function (req, res, next) {
-    console.log(req.method + req.path);
-    console.log(req.body.data);
+    try {
+      console.log("REQUEST " + req.method + req.path);
+      if (req.body.data && Object.keys(req.body.data).length)
+        console.log("________ data", req.body.data);
+      if (req.params && Object.keys(req.params).length)
+        console.log("________ params", req.params);
+      if (req.query && Object.keys(req.query).length)
+        console.log("________ query", req.query);
+    } catch (error) {}
+
     const pathCheck = paths.some((path) => path === req.method + req.path);
     pathCheck ? next() : await middleware(req, res, next);
   };

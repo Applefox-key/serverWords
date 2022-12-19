@@ -1,4 +1,4 @@
-import * as usr from "../models/usersM.js";
+import * as usr from "../moduls/usersM.js";
 import * as validator from "../helpers/validator.js";
 import express from "express";
 import db from "../database.js";
@@ -19,7 +19,7 @@ router.post("/", async (req, res, next) => {
       return;
     }
     if (!req.body.data.email || !req.body.data.password) {
-      res.status(400).json({ error: emailValid.error });
+      res.status(400).json({ error: "wrong login or password" });
       return;
     }
     let emailValid = validator.emaileValidation(req.body.data.email);

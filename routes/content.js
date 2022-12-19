@@ -1,5 +1,5 @@
-import * as con from "../models/contentM.js";
-import * as common from "../models/commonM.js";
+import * as con from "../moduls/contentM.js.js";
+import * as common from "../moduls/commonM.js";
 import express from "express";
 import bodyParser from "body-parser";
 import { User } from "../classes/User.js";

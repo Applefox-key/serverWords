@@ -3,52 +3,49 @@ import { User } from "../classes/User.js";
 
 //all by admin
 export const getAllCategories = async (isPublic = false) => {
-  try {
-    if (isPublic)
-      return await db_get(`SELECT * FROM categories userid is NULL`);
-    return await db_get(`SELECT * FROM categories WHERE userid != NULL`);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
+  const query = isPublic
+    ? `SELECT * FROM categories WHERE userid is NULL`
+    : `SELECT * FROM categories WHERE userid != NULL`;
+  return await db_get(query);
 };
 
 //get one by name
 export const getCategoryByName = async (name, isPublic = false) => {
-  if (isPublic)
-    return await db_get(
-      `SELECT * FROM categories WHERE name=? AND userid is NULL`,
-      [name]
-    );
+  let query = isPublic
+    ? `SELECT * FROM categories WHERE name=? AND userid is NULL`
+    : `SELECT * FROM categories WHERE name=? AND userid=?`;
+  let params = [name];
 
-  const userid = User.getInstance().user.id;
-  return await db_get(`SELECT * FROM categories WHERE name=? AND userid=?`, [
-    name,
-    userid,
-  ]);
+  if (!isPublic) {
+    const userid = User.getInstance().user.id;
+    params.push(userid);
+  }
+  return await db_get(query, params);
 };
 //get one by id
 export const getCategoryById = async (id, isPublic = false) => {
-  if (isPublic)
-    return await db_get(
-      `SELECT * FROM categories WHERE id=? AND userid is NULL`,
-      [id]
-    );
-  const userid = User.getInstance().user.id;
+  let query = isPublic
+    ? `SELECT * FROM categories WHERE id=? AND userid is NULL`
+    : `SELECT * FROM categories WHERE id=? AND userid=?`;
+  let params = [id];
 
-  return await db_get(`SELECT * FROM categories WHERE id=? AND userid=?`, [
-    id,
-    userid,
-  ]);
+  if (!isPublic) {
+    const userid = User.getInstance().user.id;
+    params.push(userid);
+  }
+  return await db_get(query, params);
 };
 //get ALL
 export const getCategoryAll = async (isPublic = false) => {
-  if (isPublic)
-    return await db_all(`SELECT * FROM categories WHERE userid IS NULL `);
-  const userid = User.getInstance().user.id;
-  let result = await db_all(`SELECT * FROM categories WHERE userid=? `, [
-    userid,
-  ]);
-  return result;
+  let query = isPublic
+    ? `SELECT * FROM categories WHERE userid IS NULL`
+    : `SELECT * FROM categories WHERE userid=?`;
+  let params = [];
+  if (!isPublic) {
+    const userid = User.getInstance().user.id;
+    params.push(userid);
+  }
+  return await db_all(query, params);
 };
 //create (one for user and return new row's id )or (create one for public and return new row's id)
 export const createUserCategory = async (name) => {

@@ -1,5 +1,5 @@
-import * as exp from "../models/expressionsM.js";
-import * as usr from "../models/usersM.js";
+import * as exp from "../moduls/expressionsM.js";
+import * as usr from "../moduls/usersM.js";
 import * as validator from "../helpers/validator.js";
 import express from "express";
 import db from "../database.js";
@@ -74,7 +74,7 @@ router.get("/", async (req, res, next) => {
 //unread list by token
 router.get("/unread", async (req, res, next) => {
   try {
-    let list = await exp.getUnreadListByToken();
+    let list = await exp.getUnreadListByToken(req.query.offset_ms);
     res
       .status(!list ? 400 : 200)
       .json(!list ? { error: "session not found" } : { data: list });
