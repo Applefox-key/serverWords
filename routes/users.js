@@ -1,4 +1,4 @@
-import * as usr from "../moduls/usersM.js";
+import * as usr from "../modules/usersM.js";
 import * as validator from "../helpers/validator.js";
 import express from "express";
 import db from "../database.js";

@@ -6,7 +6,7 @@ import collectionsRouter from "./routes/collections.js";
 import contentRouter from "./routes/content.js";
 import pbcollectionsRouter from "./routes/pbcollections.js";
 import categoriesRouter from "./routes/categories.js";
-import * as usr from "./moduls/usersM.js";
+import * as usr from "./modules/usersM.js";
 import { User } from "./classes/User.js";
 
 export const app = express();

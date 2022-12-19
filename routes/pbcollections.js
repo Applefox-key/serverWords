@@ -1,6 +1,6 @@
-import * as pbcol from "../moduls/pbcollectionsM.js.js";
-import * as com from "../moduls/commonM.js";
-import * as common from "../moduls/commonM.js";
+import * as pbcol from "../modules/pbcollectionsM.js";
+import * as com from "../modules/commonM.js";
+import * as common from "../modules/commonM.js";
 import express from "express";
 import bodyParser from "body-parser";
 import { User } from "../classes/User.js";

@@ -1,12 +1,12 @@
-import * as col from "../moduls/collectionsM.js.js";
-import * as common from "../moduls/commonM.js";
+import * as col from "../modules/collectionsM.js";
+import * as common from "../modules/commonM.js";
 import express from "express";
 import bodyParser from "body-parser";
 import { User } from "../classes/User.js";
 import {
   createUserCategory,
   getCategoryByName,
-} from "../moduls/categoriesM.js";
+} from "../modules/categoriesM.js";
 
 const router = express.Router();
 const app = express();

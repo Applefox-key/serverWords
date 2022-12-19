@@ -1,5 +1,5 @@
-import * as categ from "../moduls/categoriesM.js";
-import * as common from "../moduls/commonM.js";
+import * as categ from "../modules/categoriesM.js";
+import * as common from "../modules/commonM.js";
 import express from "express";
 import bodyParser from "body-parser";
 import { User } from "../classes/User.js";
