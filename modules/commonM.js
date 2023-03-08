@@ -32,6 +32,25 @@ export const formatCollectionContent = (data) => {
   return [...map.values()];
 };
 
+//get one collections with content ADMIN
+export const getOneWithContentAdmin = async (id) => {
+  // const userid = User.getInstance().user.id;
+
+  const rows = await db_all(
+    `SELECT collections.id, collections.note, collections.name AS name,categoryid,
+          categories.name AS category, 
+          question, answer, content.note AS note_cont, content.id AS id_cont 
+    FROM collections  
+    LEFT JOIN  content  
+    ON collections.id = content.collectionid
+    LEFT JOIN  categories  
+    ON collections.categoryid = categories.id
+    WHERE collections.id = ?`,
+    [id]
+  );
+
+  return !rows ? [] : rows;
+};
 //get users all collections with content
 export const getAllWithContent = async (select = "") => {
   const userid = User.getInstance().user.id;

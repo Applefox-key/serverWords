@@ -10,8 +10,8 @@ import * as usr from "./modules/usersM.js";
 import { User } from "./classes/User.js";
 
 export const app = express();
-const port = 9002;
-// const port = 8000;
+// const port = 9002;
+const port = 8000;
 process.env.TZ = "Etc/Universal"; // UTC +00:00
 app.use(cors());
 app.use(express.static("public"));

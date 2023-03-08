@@ -71,6 +71,28 @@ router.get("/", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
+//user's list with pagination
+router.get("/page/:page", async (req, res, next) => {
+  const page = req.query.page;
+  const limit = req.query.limit;
+
+  // try {
+  //   total = await exp.getListCount();
+  //   console.log("total ", total);
+  // } catch (error) {
+  //   res.status(400).json({ error: error.message });
+  //   return;
+  // }
+
+  try {
+    let list = await exp.getListPage(limit, (page - 1) * limit);
+    res
+      .status(!list ? 400 : 200)
+      .json(!list ? { error: "session not found" } : { data: list });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 //unread list by token
 router.get("/unread", async (req, res, next) => {
   try {

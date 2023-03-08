@@ -14,12 +14,42 @@ export const getAllUsersExpressions = async () => {
 export const getList = async () => {
   const userid = User.getInstance().user.id;
   const rows = await db_all(
-    "SELECT * FROM expressions where userid = " + userid
+    `SELECT * FROM expressions where userid = ? 
+    ORDER BY id DESC`,
+    [userid]
   );
   if (!rows) return [];
   return rows;
 };
 
+export const getListCount = async () => {
+  const userid = User.getInstance().user.id;
+  const rows = await db_all(
+    "SELECT COUNT(phrases) FROM expressions where userid = " + userid
+  );
+
+  return rows;
+};
+
+export const getListPage = async (limit, offset) => {
+  const userid = User.getInstance().user.id;
+
+  let total = await db_all(
+    "SELECT COUNT(*) as total FROM expressions where userid = " + userid
+  );
+  console.log("total ", total);
+  // total = Math.ceil(total.total / limit);
+  console.log("total ", total);
+  const rows = await db_all(
+    `SELECT * FROM expressions 
+     WHERE userid = ?
+     ORDER BY id DESC
+    LIMIT ? OFFSET ?`,
+    [userid, limit, offset]
+  );
+  if (!rows) return [[], total];
+  return { list: rows, total };
+};
 export const getUnreadListByToken = async (offset_ms = 0) => {
   let offset_s = offset_ms / 1000;
   const userid = User.getInstance().user.id;
