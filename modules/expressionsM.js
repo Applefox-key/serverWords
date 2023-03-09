@@ -11,41 +11,36 @@ export const getAllUsersExpressions = async () => {
     return { error: error.message };
   }
 };
-export const getList = async () => {
+export const getList = async (filter = "") => {
   const userid = User.getInstance().user.id;
+
   const rows = await db_all(
-    `SELECT * FROM expressions where userid = ? 
-    ORDER BY id DESC`,
-    [userid]
+    `SELECT * FROM expressions WHERE userid = ?` +
+      (filter ? ` AND expressions.phrase LIKE  ? ` : "") +
+      `ORDER BY id DESC`,
+    filter ? [userid, filter] : [userid]
   );
+
   if (!rows) return [];
   return rows;
 };
 
-export const getListCount = async () => {
-  const userid = User.getInstance().user.id;
-  const rows = await db_all(
-    "SELECT COUNT(phrases) FROM expressions where userid = " + userid
-  );
-
-  return rows;
-};
-
-export const getListPage = async (limit, offset) => {
+export const getListPage = async (limit, offset, filter = "") => {
   const userid = User.getInstance().user.id;
 
   let total = await db_all(
-    "SELECT COUNT(*) as total FROM expressions where userid = " + userid
+    "SELECT COUNT(*) as total FROM expressions WHERE userid = ?" +
+      (filter ? ` AND phrase LIKE ? ` : ""),
+    filter ? [userid, filter] : [userid]
   );
-  console.log("total ", total);
-  // total = Math.ceil(total.total / limit);
-  console.log("total ", total);
+
   const rows = await db_all(
-    `SELECT * FROM expressions 
-     WHERE userid = ?
-     ORDER BY id DESC
+    `SELECT * FROM expressions
+     WHERE userid = ?` +
+      (filter ? ` AND phrase LIKE ? ` : "") +
+      `ORDER BY id DESC
     LIMIT ? OFFSET ?`,
-    [userid, limit, offset]
+    filter ? [userid, filter, limit, offset] : [userid, limit, offset]
   );
   if (!rows) return [[], total];
   return { list: rows, total };
