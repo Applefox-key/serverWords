@@ -158,6 +158,28 @@ router.patch("/", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
+//UPDATE password BY admin token
+router.patch("/password", async (req, res, next) => {
+  try {
+    let user = User.getInstance().user;
+    if (user.role !== "admin") {
+      res.status(400).json({ error: "access denied" });
+    }
+    const userid = req.body.data.userid;
+    var data = {
+      // name: req.body.data.name,
+      // img: req.body.data.img,
+      // email: req.body.data.email,
+      password: req.body.data.password ? md5(req.body.data.password) : null,
+    };
 
+    let result = await usr.updateUser(userid, data);
+    res
+      .status(result.error ? 400 : 200)
+      .json(result.error ? { error: result.error } : { message: "success" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 // module.exports = router;
 export default router;
