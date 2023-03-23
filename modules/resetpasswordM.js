@@ -107,7 +107,7 @@ export const findValidToken = async (userid) => {
   return res;
 };
 //mail with reset token
-export const resetQuery = async (email) => {
+export const resetQuery = async (email, page) => {
   try {
     let user = await getUserByEmail(email);
 
@@ -115,10 +115,8 @@ export const resetQuery = async (email) => {
     let token = await findValidToken(user.id);
     if (token.error) token = await createResetToken(user.id);
     if (token.error) return { error: token.error };
-    console.log("token");
-    console.log("http://phrases.learnapp.me/resetpassword/" + token);
 
-    sendEmail(email, "http://phrases.learnapp.me/resetpassword/" + token);
+    sendEmail(email, page + token);
 
     return { token: token, role: user.role };
   } catch (error) {

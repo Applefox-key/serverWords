@@ -16,8 +16,11 @@ app.use(bodyParser.json());
 
 //request for token
 router.post("/", async (req, res, next) => {
+  let page = req.body.data.page
+    ? "http://learnapp.me/resetpassword/"
+    : "http://phrases.learnapp.me/resetpassword/";
   try {
-    let result = await resetQuery(req.body.data.email);
+    let result = await resetQuery(req.body.data.email, page);
     res
       .status(result.error ? 400 : 200)
       .json(
