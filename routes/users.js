@@ -162,14 +162,14 @@ router.patch("/", async (req, res, next) => {
 router.patch("/password", async (req, res, next) => {
   try {
     let user = User.getInstance().user;
-
     if (user.role !== "admin") {
       res.status(400).json({ error: "access denied" });
     }
     const userid = req.body.data.userid;
-    const p = req.body.data.password ? md5(req.body.data.password) : null;
-
     var data = {
+      name: req.body.data.name,
+      img: req.body.data.img,
+      email: req.body.data.email,
       password: req.body.data.password ? md5(req.body.data.password) : null,
     };
 

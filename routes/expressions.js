@@ -65,8 +65,6 @@ router.get("/", async (req, res, next) => {
   const filter = req.query.filter ? `%${req.query.filter}%` : "";
   try {
     let list = await exp.getList(filter);
-    console.log("list");
-    console.log(list);
     res
       .status(!list ? 400 : 200)
       .json(!list ? { error: "session not found" } : { data: list });
@@ -79,7 +77,6 @@ router.get("/page/:page", async (req, res, next) => {
   const page = req.query.page;
   const limit = req.query.limit;
   const filter = req.query.filter ? `%${req.query.filter}%` : "";
-  console.log(filter);
 
   try {
     let list = await exp.getListPage(limit, (page - 1) * limit, filter);

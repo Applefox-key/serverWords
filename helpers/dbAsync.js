@@ -16,8 +16,6 @@ export const db_all = async (query, param) => {
       if (err) {
         reject(err.error ? err : { error: err.message });
       }
-      console.log(rows);
-
       resolve(rows);
     });
   });

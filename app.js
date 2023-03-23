@@ -5,9 +5,11 @@ import phraseRouter from "./routes/expressions.js";
 import collectionsRouter from "./routes/collections.js";
 import contentRouter from "./routes/content.js";
 import pbcollectionsRouter from "./routes/pbcollections.js";
+import resetpasswordRouter from "./routes/resetpassword.js";
 import categoriesRouter from "./routes/categories.js";
 import * as usr from "./modules/usersM.js";
 import { User } from "./classes/User.js";
+import nodemailer from "nodemailer";
 
 export const app = express();
 // const port = 9002;
@@ -17,7 +19,17 @@ app.use(cors());
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(unless(autorisation, "POST/users/login", "POST/users", "GET/Home"));
+app.use(
+  unless(
+    autorisation,
+    "POST/users/login",
+    "POST/users",
+    "GET/Home",
+    "POST/resetpassword",
+    "GET/resetpassword",
+    "PATCH/resetpassword"
+  )
+);
 
 app.get("/", (req, res, next) => {
   res.status(200).json({ message: "Ok" });
@@ -31,6 +43,7 @@ app.use("/collections", collectionsRouter);
 app.use("/content", contentRouter);
 app.use("/pbcollections", pbcollectionsRouter);
 app.use("/categories", categoriesRouter);
+app.use("/resetpassword", resetpasswordRouter);
 // Default response for any other request
 app.use(function (req, res) {
   res.status(404).json({ error: "bad request" });

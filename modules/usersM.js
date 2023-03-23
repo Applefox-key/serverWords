@@ -89,7 +89,7 @@ export const logout = async (token) => {
 export const updateUser = async (userid, set) => {
   try {
     let img = set.img;
-    if (!img) img = "";
+    if (!img) img = null;
     else if (img.includes("blob")) {
       await fbHelpers.setImgToStorage(usersList[num].id, img).then((res) => {
         img = res;

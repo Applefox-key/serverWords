@@ -68,6 +68,16 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
           FOREIGN KEY(userid) REFERENCES users(id)
           ON DELETE CASCADE  ON UPDATE NO ACTION)`,
         (err) => {}
+      ); //resetToken
+      db.run(
+        `CREATE TABLE resettoken (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          token text,
+          userid integer,  
+          expirationDate integer,
+          FOREIGN KEY(userid) REFERENCES users(id)
+          ON DELETE CASCADE  ON UPDATE NO ACTION)`,
+        (err) => {}
       );
       //categories
       db.run(
