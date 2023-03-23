@@ -134,10 +134,13 @@ export const resetTokenValidation = async (resetToken) => {
           AND  expirationDate > ?`,
       [resetToken, tm]
     );
-    if (!resetRow) return { error: "the link's expiration date has expired" };
+    if (!resetRow)
+      return { error: "the link's expiration date has expired " + resetRow };
     return resetRow;
   } catch (error) {
-    return { error: "error the link's expiration date has expired" };
+    return {
+      error: "error the link's expiration date has expired " + error.message,
+    };
   }
 };
 
