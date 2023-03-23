@@ -34,6 +34,7 @@ router.post("/", async (req, res, next) => {
 router.get("/", async (req, res, next) => {
   try {
     let validToken = await resetTokenValidation(req.query.resetToken);
+    console.log(validToken);
 
     res.status(200).json({ data: validToken });
   } catch (error) {

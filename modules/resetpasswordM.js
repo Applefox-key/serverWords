@@ -123,7 +123,6 @@ export const resetQuery = async (email, page) => {
     res.status(400).json({ error: error.message });
   }
 };
-
 //reset token validation
 export const resetTokenValidation = async (resetToken) => {
   const tm = new Date().getTime();
@@ -138,7 +137,7 @@ export const resetTokenValidation = async (resetToken) => {
     if (!resetRow) return { error: "the link's expiration date has expired" };
     return resetRow;
   } catch (error) {
-    return { error: "the link's expiration date has expired" };
+    return { error: "error the link's expiration date has expired" };
   }
 };
 
