@@ -2,8 +2,9 @@ import * as con from "../modules/contentM.js";
 import * as common from "../modules/commonM.js";
 import express from "express";
 import bodyParser from "body-parser";
-import { User } from "../classes/User.js";
-import querystring from "querystring";
+
+import { upload } from "../helpers/multer.js";
+import { logResult } from "../helpers/resultLog.js";
 
 const router = express.Router();
 const app = express();
@@ -21,17 +22,22 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-//Edit content by content date with id
-router.patch("/", async (req, res, next) => {
-  try {
-    let result = await con.editContent({ ...req.body.data });
-    res
-      .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+//Edit content by content data with id
+router.patch(
+  "/",
+  upload.fields([{ name: "imgAfile" }, { name: "imgQfile" }]),
+  async (req, res, next) => {
+    try {
+      let result = await con.editContent({ ...req.body.data }, req.files);
+      logResult(result);
+      res
+        .status(result.error ? 400 : 200)
+        .json(result.error ? { error: result.error } : { message: "success" });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
   }
-});
+);
 //Get one pub content item  by id
 router.get("/pub/:id", async (req, res, next) => {
   try {

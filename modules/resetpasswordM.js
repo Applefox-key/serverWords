@@ -134,7 +134,6 @@ export const resetTokenValidation = async (resetToken) => {
           AND  expirationDate > ?`,
       [resetToken, tm]
     );
-    console.log(resetRow);
 
     if (!resetRow)
       return {

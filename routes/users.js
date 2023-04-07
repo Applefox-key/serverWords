@@ -37,6 +37,7 @@ router.post("/", async (req, res, next) => {
       email: req.body.data.email,
       password: md5(req.body.data.password),
       img: req.body.data.img ? req.body.data.img : null,
+      settings: req.body.data.settings ? req.body.data.settings : null,
     };
 
     let result = await usr.createUser(data);
@@ -148,6 +149,7 @@ router.patch("/", async (req, res, next) => {
       img: req.body.data.img,
       email: req.body.data.email,
       password: req.body.data.password ? md5(req.body.data.password) : null,
+      settings: req.body.data.settings,
     };
 
     let result = await usr.updateUser(userid, data);
@@ -171,6 +173,7 @@ router.patch("/password", async (req, res, next) => {
       img: req.body.data.img,
       email: req.body.data.email,
       password: req.body.data.password ? md5(req.body.data.password) : null,
+      settings: req.body.data.settings,
     };
 
     let result = await usr.updateUser(userid, data);

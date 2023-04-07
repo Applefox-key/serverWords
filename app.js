@@ -7,9 +7,9 @@ import contentRouter from "./routes/content.js";
 import pbcollectionsRouter from "./routes/pbcollections.js";
 import resetpasswordRouter from "./routes/resetpassword.js";
 import categoriesRouter from "./routes/categories.js";
+import imgRouter from "./routes/img.js";
 import * as usr from "./modules/usersM.js";
 import { User } from "./classes/User.js";
-import nodemailer from "nodemailer";
 
 export const app = express();
 // const port = 9002;
@@ -17,6 +17,7 @@ const port = 8000;
 process.env.TZ = "Etc/Universal"; // UTC +00:00
 app.use(cors());
 app.use(express.static("public"));
+app.use("/images", express.static("public/images"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(
@@ -44,23 +45,30 @@ app.use("/content", contentRouter);
 app.use("/pbcollections", pbcollectionsRouter);
 app.use("/categories", categoriesRouter);
 app.use("/resetpassword", resetpasswordRouter);
+app.use("/img", imgRouter);
+
 // Default response for any other request
 app.use(function (req, res) {
   res.status(404).json({ error: "bad request" });
 });
 
 export async function autorisation(req, res, next) {
-  if (!req.headers.authorization) {
+  let token;
+  if (!req.headers.authorization && !req.query.token) {
     return res
       .status(403)
       .json({ error: "No credentials sent! Please relogin!" });
-  }
-  const token = req.headers.authorization.split(" ")[1];
+  } else
+    token = req.headers.authorization
+      ? req.headers.authorization.split(" ")[1]
+      : req.query.token;
+
   let userRow = await usr.getUserByToken(token);
   if (!userRow)
     return res.status(403).json({ error: "User not found. Please relogin!" });
 
   let user = User.getInstance();
+
   user.setToken(token);
   user.setUser(userRow);
 
@@ -69,7 +77,11 @@ export async function autorisation(req, res, next) {
 export function unless(middleware, ...paths) {
   return async function (req, res, next) {
     try {
-      console.log("REQUEST " + req.method + req.path);
+      console.log(
+        "___________________________________________________REQUEST " +
+          req.method +
+          req.path
+      );
       if (req.body.data && Object.keys(req.body.data).length)
         console.log("________ data", req.body.data);
       if (req.params && Object.keys(req.params).length)

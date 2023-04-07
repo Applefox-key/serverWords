@@ -1,4 +1,5 @@
 import * as col from "../modules/collectionsM.js";
+import * as pb from "../modules/pbcollectionsM.js";
 import * as common from "../modules/commonM.js";
 import express from "express";
 import bodyParser from "body-parser";
@@ -7,6 +8,7 @@ import {
   createUserCategory,
   getCategoryByName,
 } from "../modules/categoriesM.js";
+import { upload } from "../helpers/multer.js";
 
 const router = express.Router();
 const app = express();
@@ -63,6 +65,8 @@ router.post("/", async (req, res, next) => {
 //Create new with content
 router.post("/content", async (req, res, next) => {
   try {
+    const fromPub = req.body.data.fromPub;
+
     let catid;
     //add from file with category id
     if (req.body.data.categoryid) {
@@ -74,12 +78,14 @@ router.post("/content", async (req, res, next) => {
       //there is no such category ? -> add and get it's id
       if (!catid) catid = await createUserCategory(req.body.data.categoryName);
     }
+
     //create collection
     let resp = await col.createCollection({
       name: req.body.data.name,
       categoryid: catid,
       note: req.body.data.note,
     });
+
     if (!resp || resp.error) {
       res.status(400).json({ error: resp ? resp.error : "error" });
       return;
@@ -92,8 +98,72 @@ router.post("/content", async (req, res, next) => {
       return;
     }
     let err = false;
+
     list.forEach(async (element, i) => {
       let result = await common.createCollectionContent(element, resp.id);
+      if (result.error) {
+        err = true;
+        res.status(400).json({ error: result.error });
+        return;
+      }
+    });
+    if (!err) res.status(200).json({ message: "success" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+//Create new from shared content
+router.post("/copy", async (req, res, next) => {
+  try {
+    const collectionFrom = await pb.getOneWithContent(req.body.data.colId);
+    // let catid = collectionFrom[0].categoryid;
+    let cat = collectionFrom[0].category;
+    let fromUser = {
+      userFromId: collectionFrom[0].userid.toString(),
+      colFromId: collectionFrom[0].id.toString(),
+    };
+    if (fromUser.userFromId === User.getInstance().id) {
+      res
+        .status(200)
+        .json({ message: "This collection is already in your list" });
+      return;
+    }
+
+    let catid;
+    if (cat) {
+      //add from public collection -> get appropriate user's category
+      //trying to get cutegory by name
+      catid = await getCategoryByName(cat);
+      //there is no such category ? -> add and get it's id
+      if (!catid) catid = await createUserCategory(cat);
+    }
+
+    //create collection
+    let resp = await col.createCollection({
+      name: collectionFrom[0].category.name,
+      categoryid: catid,
+      note: collectionFrom[0].category.note,
+    });
+
+    if (!resp || resp.error) {
+      res.status(400).json({ error: resp ? resp.error : "error" });
+      return;
+    }
+
+    //create content
+    let list = req.body.data.content;
+    if (!Array.isArray(list)) {
+      res.status(400).json({ error: "content is not an Array" });
+      return;
+    }
+    let err = false;
+
+    list.forEach(async (element, i) => {
+      let result = await common.createCollectionContent(
+        element,
+        resp.id,
+        fromUser
+      );
       if (result.error) {
         err = true;
         res.status(400).json({ error: result.error });
@@ -183,30 +253,39 @@ router.get("/:id/content", async (req, res, next) => {
 });
 
 // Create new content by collection id
-router.post("/:id/content", async (req, res, next) => {
-  try {
-    let list = req.body.data.list;
-    if (!Array.isArray(list)) {
-      list = [req.body.data];
-    }
-    let err = false;
-    list.forEach(async (element, i) => {
-      let result = await common.createCollectionContent(
-        { ...element },
-        req.params.id
-      );
-      if (result.error) {
-        res.status(400).json({ error: result.error });
-        err = true;
-        return;
+router.post(
+  "/:id/content",
+  upload.fields([{ name: "imgAfile" }, { name: "imgQfile" }]),
+  async (req, res, next) => {
+    let isOneItem = false;
+    try {
+      let list = req.body.data.list;
+      if (!Array.isArray(list)) {
+        list = [req.body.data];
+        isOneItem = true;
       }
-    });
 
-    if (!err) res.status(200).json({ message: "success" });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+      let err = false;
+      list.forEach(async (element, i) => {
+        let result = await common.createCollectionContent(
+          { ...element },
+          req.params.id,
+          "",
+          isOneItem ? req.files : ""
+        );
+        if (result.error) {
+          res.status(400).json({ error: result.error });
+          err = true;
+          return;
+        }
+      });
+
+      if (!err) res.status(200).json({ message: "success" });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
   }
-});
+);
 // Delete content by collection id
 router.delete("/:id/content", async (req, res, next) => {
   try {

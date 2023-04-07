@@ -101,9 +101,17 @@ export const updateUser = async (userid, set) => {
              name = COALESCE(?,name), 
              email = COALESCE(?,email), 
              password = COALESCE(?,password), 
-             img = COALESCE(?,img)
+             img = COALESCE(?,img),
+             settings = COALESCE(?,settings)
              WHERE id = ?`,
-      [set.name, set.email, set.password, img, userid]
+      [
+        set.name,
+        set.email,
+        set.password,
+        img,
+        JSON.stringify(set.settings),
+        userid,
+      ]
     );
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -119,13 +127,14 @@ export const createUser = async (set) => {
       });
     }
     return await db_run(
-      `INSERT INTO users (name, email, password, img,role) VALUES (?,?,?,?,?)`,
+      `INSERT INTO users (name, email, password, img,rol,settings) VALUES (?,?,?,?,?,?)`,
       [
         set.name,
         set.email,
         set.password,
         img,
         set.role ? statusbar.role : "user",
+        JSON.stringify(set.settings),
       ]
     );
   } catch (error) {

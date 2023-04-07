@@ -120,6 +120,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         ON DELETE CASCADE ON UPDATE NO ACTION)`,
         (err) => {}
       );
+
       //content
       db.run(
         `CREATE TABLE content (
@@ -127,38 +128,107 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         question text,
         answer text,
         note text,
-        collectionid integer,
+        collectionid integer,  
+        imgQ text,  
+        imgA text,
         FOREIGN KEY(collectionid) REFERENCES collections(id)
         ON DELETE CASCADE ON UPDATE NO ACTION)`,
         (err) => {}
       );
-      //pbcollections
+      // collections add new column
       db.run(
-        `CREATE TABLE pbcollections (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name text,
-        note text,
-        userid integer,
-        categoryid integer,       
-        FOREIGN KEY(categoryid) REFERENCES categories(id) 
-        ON DELETE SET NULL ON UPDATE NO ACTION,
-        FOREIGN KEY(userid) REFERENCES users(id)
-        ON DELETE CASCADE  ON UPDATE NO ACTION)`,
-        (err) => {}
+        `ALTER TABLE collections ADD COLUMN isPublic BOOLEAN NOT NULL DEFAULT 0`,
+        (err) => {
+          console.log(err);
+        }
       );
-      //pbcontent
+      //content add new column
       db.run(
-        `CREATE TABLE pbcontent (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        question text,
-        answer text,
-        note text,
-        collectionid integer,
-        FOREIGN KEY(collectionid) REFERENCES pbcollections(id)
-        ON DELETE CASCADE  ON UPDATE NO ACTION)`,
-        (err) => {}
+        `ALTER TABLE content
+        ADD COLUMN imgQ text
+        `,
+        (err) => {
+          console.log(err);
+        }
       );
+      //content add new column
+      db.run(
+        `ALTER TABLE content
+        ADD COLUMN imgA text
+        `,
+        (err) => {
+          console.log(err);
+        }
+      );
+      //user add new column
+      db.run(
+        `ALTER TABLE users
+        ADD COLUMN settings text
+        `,
+        (err) => {
+          console.log(err);
+        }
+      );
+      //---------------------------------------------------------pbcollections
+      db.run("DROP TABLE IF EXISTS pbcontent", function (err) {
+        if (err) {
+          console.error(err.message);
+        } else {
+          console.log("Table deleted successfully");
+        }
+      });
+      db.run("DROP TABLE IF EXISTS pbcollections", function (err) {
+        if (err) {
+          console.error(err.message);
+        } else {
+          console.log("Table deleted successfully");
+        }
+      });
+      // db.run(
+      //   `CREATE TABLE pbcollections (
+      //   id INTEGER PRIMARY KEY AUTOINCREMENT,
+      //   name text,
+      //   note text,
+      //   userid integer,
+      //   categoryid integer,
+      //   FOREIGN KEY(categoryid) REFERENCES categories(id)
+      //   ON DELETE SET NULL ON UPDATE NO ACTION,
+      //   FOREIGN KEY(userid) REFERENCES users(id)
+      //   ON DELETE CASCADE  ON UPDATE NO ACTION)`,
+      //   (err) => {}
+      // );
+      // //pbcontent
+      // db.run(
+      //   `CREATE TABLE pbcontent (
+      //   id INTEGER PRIMARY KEY AUTOINCREMENT,
+      //   question text,
+      //   answer text,
+      //   note text,
+      //   collectionid integer,
+      //   FOREIGN KEY(collectionid) REFERENCES pbcollections(id)
+      //   ON DELETE CASCADE  ON UPDATE NO ACTION)`,
+      //   (err) => {}
+      // );
     });
+    //----------------------------------------------------------------------------
+    // //pbcontent add new column
+    // db.run(
+    //   `ALTER TABLE pbcontent
+    //     ADD COLUMN imgQ text
+    //     `,
+    //   (err) => {
+    //     console.log(err);
+    //   }
+    // );
+    // //content add new column
+    // db.run(
+    //   `ALTER TABLE pbcontent
+    //     ADD COLUMN imgA text
+    //     `,
+    //   (err) => {
+    //     console.log(err);
+    //   }
+    // );
     // db.close();
   }
 });

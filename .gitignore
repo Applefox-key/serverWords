@@ -6,3 +6,5 @@
 db.sqlite
 db_test.sqlite
 configMail.js
+/upload/
+/content/

@@ -64,7 +64,7 @@ router.post("/user", async (req, res, next) => {
 //get all
 router.get("/public", async (req, res, next) => {
   try {
-    let list = await categ.getCategoryAll(true);
+    let list = await categ.getPubCategoryAll();
     res
       .status(!list ? 400 : 200)
       .json(!list ? { error: "categories not found" } : { data: list });
@@ -72,18 +72,7 @@ router.get("/public", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
-//create public category
-router.post("/public", async (req, res, next) => {
-  try {
-    let result = await categ.createPbCategory(req.body.data.name);
 
-    res
-      .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
 //get categories collections with content by it's id
 router.get("/:id/collections", async (req, res, next) => {
   try {
@@ -132,3 +121,16 @@ router.delete("/", async (req, res, next) => {
   }
 });
 export default router;
+
+// //create public category
+// router.post("/public", async (req, res, next) => {
+//   try {
+//     let result = await categ.createPbCategory(req.body.data.name);
+
+//     res
+//       .status(result.error ? 400 : 200)
+//       .json(result.error ? { error: result.error } : { message: "success" });
+//   } catch (error) {
+//     res.status(400).json({ error: error.message });
+//   }
+// });

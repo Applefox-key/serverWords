@@ -1,6 +1,6 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
-import md5 from "md5";
 import { User } from "../classes/User.js";
+import { saveImg } from "./images.js";
 
 export const formatCollectionContent = (data) => {
   if (data == []) return [];
@@ -15,6 +15,7 @@ export const formatCollectionContent = (data) => {
           note: el.note,
           categoryid: el.categoryid,
           category: el.category,
+          isPublic: el.isPublic,
         },
         content: [],
       });
@@ -25,10 +26,14 @@ export const formatCollectionContent = (data) => {
         question: el.question,
         answer: el.answer,
         note: el.note_cont,
+        imgA: el.imgA,
+        imgQ: el.imgQ,
+        collectionid: el.id,
       });
       map.set(el.id, val);
     }
   });
+
   return [...map.values()];
 };
 
@@ -39,7 +44,7 @@ export const getOneWithContentAdmin = async (id) => {
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name,categoryid,
           categories.name AS category, 
-          question, answer, content.note AS note_cont, content.id AS id_cont 
+          question, answer, imgA, imgQ , content.note AS note_cont, content.id AS id_cont 
     FROM collections  
     LEFT JOIN  content  
     ON collections.id = content.collectionid
@@ -58,6 +63,7 @@ export const getAllWithContent = async (select = "") => {
   if (select) {
     if (select.categoryid)
       queryPart += ` AND categoryid = ${select.categoryid} `;
+    if (select.isPublic === "1") queryPart += ` AND isPublic = ${true} `;
     if (select.textFilter)
       queryPart += ` AND (instr(lower(collections.name),lower("${select.textFilter}"))> 0 
                     OR instr(lower(question),lower("${select.textFilter}"))> 0
@@ -68,9 +74,9 @@ export const getAllWithContent = async (select = "") => {
 
   // ${queryPart}
   const rows = await db_all(
-    `SELECT collections.id , collections.name AS name, categoryid, collections.note, 
+    `SELECT collections.id , collections.name AS name, categoryid, isPublic,collections.note, 
     categories.name AS category, 
-    content.note AS note_cont, content.id AS id_cont, question,answer 
+    content.note AS note_cont, content.id AS id_cont, question,answer, imgA, imgQ 
        FROM collections  LEFT JOIN  content 
        ON collections.id = content.collectionid
        LEFT JOIN  categories  
@@ -86,7 +92,7 @@ export const getAllWithContent = async (select = "") => {
 //get users all collections with content
 export const getAllWithContentByCategory = async (catid) => {
   const rows = await db_all(
-    `SELECT collections.id , name, categoryid, collections.note, content.note AS note_cont, content.id AS id_cont, question,answer 
+    `SELECT collections.id , name, categoryid, collections.note, isPublic, content.note AS note_cont, content.id AS id_cont, question,answer, imgA, imgQ  
        FROM collections  LEFT JOIN  content 
        ON collections.id = content.collectionid
        WHERE categoryid = ? `,
@@ -100,8 +106,8 @@ export const getOneWithContent = async (id) => {
   const userid = User.getInstance().user.id;
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name,categoryid,
-          categories.name AS category, 
-          question, answer, content.note AS note_cont, content.id AS id_cont 
+          categories.name AS category, isPublic,
+          question, answer, imgA, imgQ , content.note AS note_cont, content.id AS id_cont 
     FROM collections  
     LEFT JOIN  content  
     ON collections.id = content.collectionid
@@ -113,11 +119,18 @@ export const getOneWithContent = async (id) => {
 
   return !rows ? [] : rows;
 };
+
 //create content by collection id
-export const createCollectionContent = async (set, id) => {
+export const createCollectionContent = async (
+  set,
+  id,
+  fromUser = "",
+  images = ""
+) => {
+  let [imageQUrl, imageAUrl] = saveImg(set, images, id, fromUser);
   return await db_run(
-    `INSERT INTO content (question, answer, note, collectionid) VALUES (?,?,?,?)`,
-    [set.question, set.answer, set.note, id]
+    `INSERT INTO content (question, answer, note, collectionid, imgQ, imgA) VALUES (?,?,?,?,?,?)`,
+    [set.question, set.answer, set.note, id, imageQUrl, imageAUrl]
   );
 };
 //delete content by collection id

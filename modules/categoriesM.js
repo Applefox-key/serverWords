@@ -47,6 +47,34 @@ export const getCategoryAll = async (isPublic = false) => {
   }
   return await db_all(query, params);
 };
+//get ALL public categories
+export const getPubCategoryAll = async (isPublic = false) => {
+  const rows = await db_all(
+    `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, collections.isPublic,
+    categories.name AS category
+    FROM collections  
+    LEFT JOIN categories  
+    ON collections.categoryid = categories.id
+    WHERE collections.isPublic = ` + true
+  );
+
+  if (!rows) return [];
+  // const uniqueCategories = [...new Set(rows.map((item) => item.category))];
+  const categoriesMap = rows.reduce((map, item) => {
+    if (item.category) {
+      if (!map.has(item.category)) {
+        map.set(item.category, { name: item.category, id: [item.id] });
+      } else {
+        const categoryObj = map.get(item.category);
+        categoryObj.id.push(item.id);
+        map.set(item.category, categoryObj);
+      }
+    }
+    return map;
+  }, new Map());
+  const uniqueCategories = Array.from(categoriesMap.values());
+  return uniqueCategories;
+};
 //create (one for user and return new row's id )or (create one for public and return new row's id)
 export const createUserCategory = async (name) => {
   const userid = User.getInstance().user.id;
@@ -63,20 +91,20 @@ export const createUserCategory = async (name) => {
   );
 };
 
-export const createPbCategory = async (name) => {
-  //check if the category with such name is already exist
-  let categ = await getCategoryByName(name, true);
+// export const createPbCategory = async (name) => {
+//   //check if the category with such name is already exist
+//   let categ = await getCategoryByName(name, true);
 
-  if (categ) return categ;
-  //   ? { id: categ.id }
-  //   : { error: `category with name ${name} is already exist` };
-  //create new and retun id
-  let result = await db_get(
-    `INSERT INTO categories (name, userid) VALUES (?,?) RETURNING id`,
-    [name, null]
-  );
-  return result ? result : null;
-};
+//   if (categ) return categ;
+//   //   ? { id: categ.id }
+//   //   : { error: `category with name ${name} is already exist` };
+//   //create new and retun id
+//   let result = await db_get(
+//     `INSERT INTO categories (name, userid) VALUES (?,?) RETURNING id`,
+//     [name, null]
+//   );
+//   return result ? result : null;
+// };
 
 //edit category's name
 export const editCategory = async (name, id, isPublic = false) => {
@@ -119,13 +147,13 @@ export const deleteUsersAllCategory = async () => {
   return res;
 };
 
-// copy user category to public category and return it's id
-export const getPbCategoryFromUser = async (usCatid) => {
-  if (!usCatid) return null; //no category
-  //get user category by id
-  let usCateg = await getCategoryById(usCatid);
+// // copy user category to public category and return it's id
+// export const getPbCategoryFromUser = async (usCatid) => {
+//   if (!usCatid) return null; //no category
+//   //get user category by id
+//   let usCateg = await getCategoryById(usCatid);
 
-  if (usCateg.error) return null;
-  //create pb
-  return createPbCategory(usCateg.name);
-};
+//   if (usCateg.error) return null;
+//   //create pb
+//   return createPbCategory(usCateg.name);
+// };
