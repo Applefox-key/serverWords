@@ -5,6 +5,7 @@ import db from "../database.js";
 import bodyParser from "body-parser";
 import md5 from "md5";
 import { User } from "../classes/User.js";
+import { uploadUserAvatar } from "../helpers/multer.js";
 
 const router = express.Router();
 const app = express();
@@ -141,18 +142,21 @@ router.delete("/logout", async (req, res, next) => {
 });
 
 //UPDATE BY token
-router.patch("/", async (req, res, next) => {
+router.patch("/", uploadUserAvatar.single("file"), async (req, res, next) => {
+  let userD = { ...req.body.data };
+  // , req.files
+  console.log(req.file);
   try {
     const userid = User.getInstance().user.id;
     var data = {
-      name: req.body.data.name,
-      img: req.body.data.img,
-      email: req.body.data.email,
-      password: req.body.data.password ? md5(req.body.data.password) : null,
-      settings: req.body.data.settings,
+      name: userD.name,
+      img: userD.img,
+      email: userD.email,
+      password: userD.password ? md5(req.body.data.password) : null,
+      settings: JSON.parse(userD.settings),
     };
 
-    let result = await usr.updateUser(userid, data);
+    let result = await usr.updateUser(userid, data, req.file);
     res
       .status(result.error ? 400 : 200)
       .json(result.error ? { error: result.error } : { message: "success" });

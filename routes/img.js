@@ -25,5 +25,18 @@ router.get("/", (req, res) => {
 
   res.sendFile(userFolderPath);
 });
+router.get("/avatars", (req, res) => {
+  const userId = User.getInstance().user.id;
+  const filename = req.query.img;
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const userFolderPath = path.join(
+    path.join(__dirname, ".."),
+    "content",
+    userId.toString(),
+    "avatars",
+    filename.toString()
+  );
 
+  res.sendFile(userFolderPath);
+});
 export default router;

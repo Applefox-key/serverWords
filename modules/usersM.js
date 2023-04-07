@@ -4,6 +4,7 @@ import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
 import md5 from "md5";
 import * as dotenv from "dotenv";
 import { User } from "../classes/User.js";
+import { saveImgAvatar } from "./avatars.js";
 dotenv.config();
 
 export const getAllUsers = async () => {
@@ -86,15 +87,22 @@ export const logout = async (token) => {
     res.status(400).json({ error: error.message });
   }
 };
-export const updateUser = async (userid, set) => {
+export const updateUser = async (userid, set, img) => {
+  console.log("set");
+  console.log(set);
+
   try {
-    let img = set.img;
-    if (!img) img = null;
-    else if (img.includes("blob")) {
-      await fbHelpers.setImgToStorage(usersList[num].id, img).then((res) => {
-        img = res;
-      });
-    }
+    let imageUrl = saveImgAvatar(set, img);
+    console.log("imageUrl");
+    console.log(imageUrl);
+
+    // let img = set.img;
+    // if (!img) img = null;
+    // else if (img.includes("blob")) {
+    //   await fbHelpers.setImgToStorage(usersList[num].id, img).then((res) => {
+    //     img = res;
+    //   });
+    // }
 
     return await db_run(
       `UPDATE users set 
@@ -108,7 +116,7 @@ export const updateUser = async (userid, set) => {
         set.name,
         set.email,
         set.password,
-        img,
+        imageUrl,
         JSON.stringify(set.settings),
         userid,
       ]
@@ -120,12 +128,12 @@ export const updateUser = async (userid, set) => {
 export const createUser = async (set) => {
   try {
     let img = set.img;
-    if (!img) img = "";
-    else if (img.includes("blob")) {
-      await fbHelpers.setImgToStorage(usersList[num].id, img).then((res) => {
-        img = res;
-      });
-    }
+    // if (!img) img = "";
+    // else if (img.includes("blob")) {
+    //   await fbHelpers.setImgToStorage(usersList[num].id, img).then((res) => {
+    //     img = res;
+    //   });
+    // }
     return await db_run(
       `INSERT INTO users (name, email, password, img,role,settings) VALUES (?,?,?,?,?,?)`,
       [
