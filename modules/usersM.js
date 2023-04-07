@@ -127,7 +127,7 @@ export const createUser = async (set) => {
       });
     }
     return await db_run(
-      `INSERT INTO users (name, email, password, img,rol,settings) VALUES (?,?,?,?,?,?)`,
+      `INSERT INTO users (name, email, password, img,role,settings) VALUES (?,?,?,?,?,?)`,
       [
         set.name,
         set.email,

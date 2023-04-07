@@ -26,7 +26,8 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         email text UNIQUE,
         password text,
         img text,
-        role text,
+        role text, 
+        settings text,
         CONSTRAINT email_unique UNIQUE (email))`,
         (err) => {
           if (err) {
@@ -113,7 +114,8 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         name text,
         note text,
         userid integer,
-        categoryid integer,       
+        categoryid integer,    
+        isPublic BOOLEAN NOT NULL DEFAULT 0,  
         FOREIGN KEY(categoryid) REFERENCES categories(id) 
         ON DELETE SET NULL ON UPDATE NO ACTION,
         FOREIGN KEY(userid) REFERENCES users(id)
@@ -135,55 +137,55 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         ON DELETE CASCADE ON UPDATE NO ACTION)`,
         (err) => {}
       );
-      // collections add new column
-      db.run(
-        `ALTER TABLE collections ADD COLUMN isPublic BOOLEAN NOT NULL DEFAULT 0`,
-        (err) => {
-          console.log(err);
-        }
-      );
-      //content add new column
-      db.run(
-        `ALTER TABLE content
-        ADD COLUMN imgQ text
-        `,
-        (err) => {
-          console.log(err);
-        }
-      );
-      //content add new column
-      db.run(
-        `ALTER TABLE content
-        ADD COLUMN imgA text
-        `,
-        (err) => {
-          console.log(err);
-        }
-      );
-      //user add new column
-      db.run(
-        `ALTER TABLE users
-        ADD COLUMN settings text
-        `,
-        (err) => {
-          console.log(err);
-        }
-      );
-      //---------------------------------------------------------pbcollections
-      db.run("DROP TABLE IF EXISTS pbcontent", function (err) {
-        if (err) {
-          console.error(err.message);
-        } else {
-          console.log("Table deleted successfully");
-        }
-      });
-      db.run("DROP TABLE IF EXISTS pbcollections", function (err) {
-        if (err) {
-          console.error(err.message);
-        } else {
-          console.log("Table deleted successfully");
-        }
-      });
+      // // collections add new column
+      // db.run(
+      //   `ALTER TABLE collections ADD COLUMN isPublic BOOLEAN NOT NULL DEFAULT 0`,
+      //   (err) => {
+      //     console.log(err);
+      //   }
+      // );
+      // //content add new column
+      // db.run(
+      //   `ALTER TABLE content
+      //   ADD COLUMN imgQ text
+      //   `,
+      //   (err) => {
+      //     console.log(err);
+      //   }
+      // );
+      // //content add new column
+      // db.run(
+      //   `ALTER TABLE content
+      //   ADD COLUMN imgA text
+      //   `,
+      //   (err) => {
+      //     console.log(err);
+      //   }
+      // );
+      // //user add new column
+      // db.run(
+      //   `ALTER TABLE users
+      //   ADD COLUMN settings text
+      //   `,
+      //   (err) => {
+      //     console.log(err);
+      //   }
+      // );
+      // //---------------------------------------------------------pbcollections
+      // db.run("DROP TABLE IF EXISTS pbcontent", function (err) {
+      //   if (err) {
+      //     console.error(err.message);
+      //   } else {
+      //     console.log("Table deleted successfully");
+      //   }
+      // });
+      // db.run("DROP TABLE IF EXISTS pbcollections", function (err) {
+      //   if (err) {
+      //     console.error(err.message);
+      //   } else {
+      //     console.log("Table deleted successfully");
+      //   }
+      // });
       // db.run(
       //   `CREATE TABLE pbcollections (
       //   id INTEGER PRIMARY KEY AUTOINCREMENT,
