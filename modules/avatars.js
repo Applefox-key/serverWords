@@ -1,6 +1,6 @@
 import { User } from "../classes/User.js";
 import fs from "fs";
-
+import path from "path";
 export const checkAvatarAndDelete = async (set) => {
   try {
     if (set.img.includes("static/media")) return set.img;

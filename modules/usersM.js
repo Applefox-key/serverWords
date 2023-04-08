@@ -88,21 +88,8 @@ export const logout = async (token) => {
   }
 };
 export const updateUser = async (userid, set, img) => {
-  console.log("set");
-  console.log(set);
-
   try {
     let imageUrl = saveImgAvatar(set, img);
-    console.log("imageUrl");
-    console.log(imageUrl);
-
-    // let img = set.img;
-    // if (!img) img = null;
-    // else if (img.includes("blob")) {
-    //   await fbHelpers.setImgToStorage(usersList[num].id, img).then((res) => {
-    //     img = res;
-    //   });
-    // }
 
     return await db_run(
       `UPDATE users set 

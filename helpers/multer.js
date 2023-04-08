@@ -39,8 +39,6 @@ const storage = multer.diskStorage({
 const storageAVATARS = multer.diskStorage({
   destination: (req, file, cb) => {
     const userId = User.getInstance().user.id;
-    console.log(req);
-
     checkIsFolderExist(["content", userId.toString(), "avatars"]);
     const userFolderPath = path.join(
       "./",

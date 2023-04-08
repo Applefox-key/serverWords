@@ -145,7 +145,7 @@ router.delete("/logout", async (req, res, next) => {
 router.patch("/", uploadUserAvatar.single("file"), async (req, res, next) => {
   let userD = { ...req.body.data };
   // , req.files
-  console.log(req.file);
+
   try {
     const userid = User.getInstance().user.id;
     var data = {

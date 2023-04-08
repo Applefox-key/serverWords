@@ -49,7 +49,6 @@ export const getOne = async (id) => {
 //create users one collection without content
 export const createCollection = async (set) => {
   const userid = User.getInstance().user.id;
-
   return await db_get(
     `INSERT INTO collections (name, note, userid, categoryid,isPublic) VALUES (?,?,?,?,?) RETURNING id`,
     [set.name, set.note, userid, set.categoryid ? set.categoryid : null, false]

@@ -127,7 +127,8 @@ export const createCollectionContent = async (
   fromUser = "",
   images = ""
 ) => {
-  let [imageQUrl, imageAUrl] = saveImg(set, images, id, fromUser);
+  let [imageQUrl, imageAUrl] = await saveImg(set, images, id, fromUser);
+
   return await db_run(
     `INSERT INTO content (question, answer, note, collectionid, imgQ, imgA) VALUES (?,?,?,?,?,?)`,
     [set.question, set.answer, set.note, id, imageQUrl, imageAUrl]

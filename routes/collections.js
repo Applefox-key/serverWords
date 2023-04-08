@@ -140,9 +140,9 @@ router.post("/copy", async (req, res, next) => {
 
     //create collection
     let resp = await col.createCollection({
-      name: collectionFrom[0].category.name,
-      categoryid: catid,
-      note: collectionFrom[0].category.note,
+      name: collectionFrom[0].name,
+      categoryid: catid.id,
+      note: collectionFrom[0].note,
     });
 
     if (!resp || resp.error) {
@@ -151,7 +151,7 @@ router.post("/copy", async (req, res, next) => {
     }
 
     //create content
-    let list = req.body.data.content;
+    let list = collectionFrom;
     if (!Array.isArray(list)) {
       res.status(400).json({ error: "content is not an Array" });
       return;

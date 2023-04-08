@@ -19,7 +19,7 @@ export const getOnePbContentItem = async (id) => {
   return row;
 };
 export const editContent = async (set, imges) => {
-  let [imageQUrl, imageAUrl] = saveImg(set, imges, set.collectionid);
+  let [imageQUrl, imageAUrl] = await saveImg(set, imges, set.collectionid);
 
   return await db_run(
     `UPDATE content set

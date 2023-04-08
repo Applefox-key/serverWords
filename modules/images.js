@@ -3,7 +3,7 @@ import { getOneWithContent } from "./commonM.js";
 import { User } from "../classes/User.js";
 import { getOneContentItem } from "./contentM.js";
 import { checkIsFolderExist } from "../helpers/multer.js";
-
+import path from "path";
 export const checkImgAndDelete = async (set) => {
   const userId = User.getInstance().user.id;
   const res = await getOneContentItem(set.id);
@@ -42,7 +42,6 @@ export const deleteOneImgSet = (set) => {
       }
     if (set.imgQ)
       if (set.imgQ !== "") {
-        console.log("delQ");
         const filename = set.imgQ;
         const pathUrl = "./content/" + userId + "/" + set.id + "/" + filename;
         fs.unlink(pathUrl, (err) => console.log(err));
@@ -69,6 +68,8 @@ export const copyImg = async (set, fromUser, collToId) => {
   const userId = User.getInstance().user.id.toString();
   let resultQ = "";
   let resultA = "";
+
+  if (!set.imgA && !set.imgQ) return [resultQ, resultA];
   const fromFolderPath = path.join(
     "./",
     "content",
@@ -107,14 +108,15 @@ export const copyImg = async (set, fromUser, collToId) => {
   return [resultQ, resultA];
 };
 //save images
-export const saveImg = (set, images, tocollectionId, fromUser = "") => {
+export const saveImg = async (set, images, tocollectionId, fromUser = "") => {
   let imageAUrl = set.imgA ? set.imgA : "";
   let imageQUrl = set.imgQ ? set.imgQ : "";
   //no new img files and is no from public return as it is
   if (!images && !fromUser) return [imageQUrl, imageAUrl];
   if (fromUser) {
     //copy from user public
-    [imageQUrl, imageAUrl] = copyImg(set, fromUser, tocollectionId);
+    const [imageQUrl, imageAUrl] = await copyImg(set, fromUser, tocollectionId);
+
     return [imageQUrl, imageAUrl];
   } else {
     //check if img has been changed
