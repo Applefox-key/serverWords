@@ -24,7 +24,7 @@ export const getOneWithContent = async (id) => {
   const rows = await db_all(
     `SELECT collections.id, collections.note,isPublic,collections.userid as userid, collections.name as name,categoryid,
           categories.name as category, 
-          question, answer, content.note as note_cont, content.id as id_cont 
+          question, answer, imgA, imgQ , content.note as note_cont, content.id as id_cont 
     FROM collections  
     LEFT JOIN  content  
     ON collections.id = content.collectionid

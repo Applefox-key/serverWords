@@ -9,16 +9,23 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { User } from "../classes/User.js";
+import { getByID_forImg } from "../modules/collectionsM.js";
 
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   const userId = User.getInstance().user.id;
   const colid = req.query.col;
+
+  //user by collection
+  const collect = await getByID_forImg(colid);
+
+  if (userId !== collect.userid && !collect.isPublic)
+    res.status(400).json({ error: "collection is not public" });
   const filename = req.query.img;
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const userFolderPath = path.join(
     path.join(__dirname, ".."),
     "content",
-    userId.toString(),
+    collect.userid.toString(),
     colid,
     filename.toString()
   );

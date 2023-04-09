@@ -12,7 +12,24 @@ export const getAllUsersCollections = async () => {
     res.status(400).json({ error: error.message });
   }
 };
-
+//get users one collection by id
+export const getByID_forImg = async (id) => {
+  try {
+    const res = await db_get("SELECT * FROM collections WHERE id = ?", [id]);
+    if (res) return res;
+    return "";
+  } catch (error) {
+    console.log(error.message);
+    return "";
+  }
+  // // const userid = User.getInstance().user.id;
+  // const row = await db_get(
+  //   `SELECT *
+  //   ON collections.categoryid = categories.id WHERE userid = ? AND id = ? `,
+  //   [userid, id]
+  // );
+  // return !row ? [] : row;
+};
 //get users all collections without content
 export const getAll = async () => {
   const userid = User.getInstance().user.id;
