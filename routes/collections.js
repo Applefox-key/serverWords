@@ -115,6 +115,7 @@ router.post("/content", async (req, res, next) => {
 //Create new from shared content
 router.post("/copy", async (req, res, next) => {
   try {
+    const userId = User.getInstance().user.id;
     const collectionFrom = await pb.getOneWithContent(req.body.data.colId);
     // let catid = collectionFrom[0].categoryid;
     let cat = collectionFrom[0].category;
@@ -122,7 +123,8 @@ router.post("/copy", async (req, res, next) => {
       userFromId: collectionFrom[0].userid.toString(),
       colFromId: collectionFrom[0].id.toString(),
     };
-    if (fromUser.userFromId === User.getInstance().id) {
+
+    if (fromUser.userFromId === userId.toString()) {
       res
         .status(200)
         .json({ message: "This collection is already in your list" });
@@ -170,7 +172,10 @@ router.post("/copy", async (req, res, next) => {
         return;
       }
     });
-    if (!err) res.status(200).json({ message: "success" });
+    if (!err)
+      res
+        .status(200)
+        .json({ message: "the collection has been added to your list" });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
