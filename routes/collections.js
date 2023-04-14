@@ -71,7 +71,7 @@ router.post("/content", async (req, res, next) => {
     //add from file with category id
     if (req.body.data.categoryid) {
       catid = req.body.data.categoryid;
-    } else {
+    } else if (req.body.data.categoryName) {
       //add from public collection -> get appropriate user's category
       //trying to get cutegory by name
       let catid = await getCategoryByName(req.body.data.categoryName);
