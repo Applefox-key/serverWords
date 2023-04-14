@@ -107,7 +107,7 @@ router.post("/content", async (req, res, next) => {
         return;
       }
     });
-    if (!err) res.status(200).json({ message: "success" });
+    if (!err) res.status(200).json({ message: "success", id: resp });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
