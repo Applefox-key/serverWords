@@ -115,14 +115,19 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         note text,
         userid integer,
         categoryid integer,    
-        isPublic BOOLEAN NOT NULL DEFAULT 0,  
+        isPublic BOOLEAN NOT NULL DEFAULT 0,    
+        isFavorite BOOLEAN NOT NULL DEFAULT 0,  
         FOREIGN KEY(categoryid) REFERENCES categories(id) 
         ON DELETE SET NULL ON UPDATE NO ACTION,
         FOREIGN KEY(userid) REFERENCES users(id)
         ON DELETE CASCADE ON UPDATE NO ACTION)`,
         (err) => {}
       );
-
+      db.run(`ALTER TABLE collections DROP COLUMN isFavotite`, (err) => {});
+      db.run(
+        `ALTER TABLE collections ADD COLUMN isFavorite BOOLEAN NOT NULL DEFAULT 0`,
+        (err) => {}
+      );
       //content
       db.run(
         `CREATE TABLE content (

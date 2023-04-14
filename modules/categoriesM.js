@@ -50,7 +50,7 @@ export const getCategoryAll = async (isPublic = false) => {
 //get ALL public categories
 export const getPubCategoryAll = async (isPublic = false) => {
   const rows = await db_all(
-    `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, collections.isPublic,
+    `SELECT collections.id, collections.note, collections.name AS name, isPublic, isFavorite, collections.categoryid, isFavorite,
     categories.name AS category
     FROM collections  
     LEFT JOIN categories  

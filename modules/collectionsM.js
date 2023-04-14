@@ -34,7 +34,7 @@ export const getByID_forImg = async (id) => {
 export const getAll = async () => {
   const userid = User.getInstance().user.id;
   const rows = await db_all(
-    `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, collections.isPublic,
+    `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, isFavorite,
     categories.name AS category
     FROM collections  
     LEFT JOIN categories  
@@ -56,7 +56,7 @@ export const deleteAll = async () => {
 export const getOne = async (id) => {
   const userid = User.getInstance().user.id;
   const row = await db_get(
-    `SELECT collections.name AS name, note, isPublic,categoryid, categories.name AS category FROM collections
+    `SELECT collections.name AS name, note, isPublic, isFavorite, categoryid, categories.name AS category FROM collections
     LEFT JOIN categories 
     ON collections.categoryid = categories.id WHERE userid = ? AND id = ? `,
     [userid, id]
@@ -65,12 +65,17 @@ export const getOne = async (id) => {
 };
 //create users one collection without content
 export const createCollection = async (set) => {
-  console.log(set);
-
   const userid = User.getInstance().user.id;
   return await db_get(
-    `INSERT INTO collections (name, note, userid, categoryid,isPublic) VALUES (?,?,?,?,?) RETURNING id`,
-    [set.name, set.note, userid, set.categoryid ? set.categoryid : null, false]
+    `INSERT INTO collections (name, note, userid, categoryid, isPublic, isFavorite) VALUES (?,?,?,?,?,?) RETURNING id`,
+    [
+      set.name,
+      set.note,
+      userid,
+      set.categoryid ? set.categoryid : null,
+      false,
+      false,
+    ]
   );
 };
 //delete users one collection
@@ -85,13 +90,16 @@ export const editCollection = async (set, id) => {
   if (set.hasOwnProperty("categoryid")) queryCat = "?"; //if it is  - set even enpty value
   let queryisPublic = " COALESCE(?,isPublic)";
   if (set.hasOwnProperty("isPublic")) queryisPublic = "?"; //if it is  - set even enpty value
+  let queryisFavorite = " COALESCE(?,isFavorite)";
+  if (set.hasOwnProperty("isFavorite")) queryisFavorite = "?"; //if it is  - set even enpty value
   return await db_run(
     `UPDATE collections set
     name = COALESCE(?,name),
     note = COALESCE(?,note),
     categoryid = ${queryCat},
-    isPublic = ${queryisPublic}
+    isPublic = ${queryisPublic},
+    isFavorite = ${queryisFavorite}
                  WHERE id = ?`,
-    [set.name, set.note, set.categoryid, set.isPublic, id]
+    [set.name, set.note, set.categoryid, set.isPublic, set.isFavorite, id]
   );
 };

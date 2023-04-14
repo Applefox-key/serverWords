@@ -192,6 +192,21 @@ router.get("/", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
+
+//Get user's all collections
+router.get("/favorite", async (req, res, next) => {
+  let prop = { isFavorite: true };
+  if (req.query.hasOwnProperty("isPublic")) prop.isPublic = "1";
+  try {
+    let result = await common.getAllWithContent(prop);
+    let resArr = common.formatCollectionContent(result);
+    res
+      .status(!resArr ? 400 : 200)
+      .json(!resArr ? { error: "session not found" } : { data: resArr });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 //Delete user's all collections
 router.delete("/", async (req, res, next) => {
   try {
