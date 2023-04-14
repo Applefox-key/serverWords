@@ -123,11 +123,6 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         ON DELETE CASCADE ON UPDATE NO ACTION)`,
         (err) => {}
       );
-      db.run(`ALTER TABLE collections DROP COLUMN isFavotite`, (err) => {});
-      db.run(
-        `ALTER TABLE collections ADD COLUMN isFavorite BOOLEAN NOT NULL DEFAULT 0`,
-        (err) => {}
-      );
       //content
       db.run(
         `CREATE TABLE content (
