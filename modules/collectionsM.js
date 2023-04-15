@@ -39,7 +39,8 @@ export const getAll = async () => {
     FROM collections  
     LEFT JOIN categories  
     ON collections.categoryid = categories.id
-    WHERE collections.userid = ` + userid
+    WHERE collections.userid = ${userid}
+    `
   );
   return !rows ? [] : rows;
 };

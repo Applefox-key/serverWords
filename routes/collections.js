@@ -240,6 +240,8 @@ router.patch("/:id", async (req, res, next) => {
       .status(!list ? 400 : 200)
       .json(!list ? { error: "session not found" } : { message: "success" });
   } catch (error) {
+    console.log(error.message);
+
     res.status(400).json({ error: error.message });
   }
 });

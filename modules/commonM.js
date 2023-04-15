@@ -83,7 +83,8 @@ export const getAllWithContent = async (select = "") => {
        ON collections.id = content.collectionid
        LEFT JOIN  categories  
        ON collections.categoryid = categories.id
-       WHERE collections.userid = ? ${queryPart}`,
+       WHERE collections.userid = ? ${queryPart}
+       ORDER BY collections.name ASC, content.question ASC;`,
     [userid]
   );
 
@@ -94,10 +95,12 @@ export const getAllWithContent = async (select = "") => {
 //get users all collections with content
 export const getAllWithContentByCategory = async (catid) => {
   const rows = await db_all(
-    `SELECT collections.id , name, categoryid, collections.note, isPublic, isFavorite, content.note AS note_cont, content.id AS id_cont, question,answer, imgA, imgQ  
+    `SELECT collections.id , name, categoryid, collections.note, isPublic, isFavorite,
+       content.note AS note_cont, content.id AS id_cont, question,answer, imgA, imgQ  
        FROM collections  LEFT JOIN  content 
        ON collections.id = content.collectionid
-       WHERE categoryid = ? `,
+       WHERE categoryid = ?  
+       ORDER BY collections.name ASC, content.question ASC;`,
     [catid]
   );
   return !rows ? [] : rows;
@@ -114,7 +117,8 @@ export const getOneWithContent = async (id) => {
     ON collections.id = content.collectionid
     LEFT JOIN  categories  
     ON collections.categoryid = categories.id
-    WHERE collections.userid = ? AND collections.id = ?`,
+    WHERE collections.userid = ? AND collections.id = ? 
+    ORDER BY collections.name ASC, content.question ASC;`,
     [userid, id]
   );
 
