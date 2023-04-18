@@ -36,15 +36,18 @@ export const getCategoryById = async (id, isPublic = false) => {
   return await db_get(query, params);
 };
 //get ALL
-export const getCategoryAll = async (isPublic = false) => {
-  let query = isPublic
-    ? `SELECT * FROM categories WHERE userid IS NULL`
-    : `SELECT * FROM categories WHERE userid=?`;
-  let params = [];
-  if (!isPublic) {
-    const userid = User.getInstance().user.id;
-    params.push(userid);
-  }
+export const getCategoryAll = async () => {
+  // let query = `SELECT * FROM categories WHERE userid=?`;
+
+  let query = `SELECT categories.id, categories.name AS name,categories.userid as userid, COUNT(collections.id) AS collection_count
+  FROM categories  
+  LEFT JOIN collections  
+  ON collections.categoryid = categories.id
+   WHERE categories.userid=?  
+   GROUP BY categories.id`;
+  const userid = User.getInstance().user.id;
+  let params = [userid];
+
   return await db_all(query, params);
 };
 //get ALL public categories
