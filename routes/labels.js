@@ -47,7 +47,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-// //get labels expressions by it's id
+// //edit labels by it's id
 // router.get("/:id/expressions", async (req, res, next) => {
 //   try {
 //     let result = await common.getAllWithContentByCategory(req.params.id);

@@ -153,3 +153,12 @@ export const updateExpression = async (set) => {
   );
   return res;
 };
+export const updateExpressionLabel = async (id, labelid) => {
+  let res = await db_run(
+    `UPDATE expressions set 
+      labelid = ? 
+      WHERE id = ?`,
+    [labelid, id]
+  );
+  return res;
+};

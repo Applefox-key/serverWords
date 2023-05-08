@@ -73,6 +73,33 @@ router.get("/", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
+//UPDATE expression arr labeles
+router.patch("/labels", async (req, res, next) => {
+  try {
+    //create content
+    let list = req.body.data.list;
+    let labelid = req.body.data.labelid;
+    if (!Array.isArray(list)) {
+      res.status(400).json({ error: "expressions is not an Array" });
+      return;
+    }
+    let err = false;
+
+    list.forEach(async (element, i) => {
+      //  let result = await common.createCollectionContent(element, resp.id);
+      let result = await exp.updateExpressionLabel(element, labelid);
+      if (result.error) {
+        err = true;
+        res.status(400).json({ error: result.error });
+        return;
+      }
+    });
+    if (!err) res.status(200).json({ message: "success" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 //user's list with pagination
 router.get("/page/:page", async (req, res, next) => {
   const page = req.query.page;
