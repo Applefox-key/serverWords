@@ -90,6 +90,16 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
                 ON DELETE CASCADE  ON UPDATE NO ACTION)`,
         (err) => {}
       );
+      //labels
+      db.run(
+        `CREATE TABLE labels (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name text NOT NULL ,
+                  userid integer,
+                  FOREIGN KEY(userid) REFERENCES users(id)
+                  ON DELETE CASCADE  ON UPDATE NO ACTION)`,
+        (err) => {}
+      );
       //expressions
       db.run(
         `CREATE TABLE expressions (
@@ -100,8 +110,11 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
           history text,
           nextDate integer,
           userid integer,
-          categoryid integer,       
-          FOREIGN KEY(categoryid) REFERENCES categories(id) 
+          categoryid integer,    
+          labelid integer,       
+          FOREIGN KEY(categoryid) REFERENCES categories(id)
+          ON DELETE SET NULL ON UPDATE NO ACTION,
+          FOREIGN KEY(labelid) REFERENCES labels(id) 
           ON DELETE SET NULL ON UPDATE NO ACTION,
           FOREIGN KEY(userid) REFERENCES users(id)
           ON DELETE CASCADE  ON UPDATE NO ACTION)`,

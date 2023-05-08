@@ -8,6 +8,7 @@ import pbcollectionsRouter from "./routes/pbcollections.js";
 import resetpasswordRouter from "./routes/resetpassword.js";
 import categoriesRouter from "./routes/categories.js";
 import imgRouter from "./routes/img.js";
+import labelsRouter from "./routes/labels.js";
 import * as usr from "./modules/usersM.js";
 import { User } from "./classes/User.js";
 
@@ -46,7 +47,7 @@ app.use("/pbcollections", pbcollectionsRouter);
 app.use("/categories", categoriesRouter);
 app.use("/resetpassword", resetpasswordRouter);
 app.use("/img", imgRouter);
-
+app.use("/labels", labelsRouter);
 // Default response for any other request
 app.use(function (req, res) {
   res.status(404).json({ error: "bad request" });

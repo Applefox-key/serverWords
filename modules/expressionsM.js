@@ -11,12 +11,18 @@ export const getAllUsersExpressions = async () => {
     return { error: error.message };
   }
 };
-export const getList = async (filter = "") => {
+export const getList = async (filter = "", labelid = "") => {
   const userid = User.getInstance().user.id;
 
   const rows = await db_all(
-    `SELECT * FROM expressions WHERE userid = ?` +
+    `SELECT expressions.*,  
+     labels.name AS label
+     FROM expressions
+     LEFT JOIN labels  
+     ON expressions.labelid = labels.id
+     WHERE expressions.userid = ?` +
       (filter ? ` AND expressions.phrase LIKE  ? ` : "") +
+      (labelid ? ` AND expressions.labelid = ${labelid} ` : "") +
       `ORDER BY id DESC`,
     filter ? [userid, filter] : [userid]
   );
@@ -25,19 +31,26 @@ export const getList = async (filter = "") => {
   return rows;
 };
 
-export const getListPage = async (limit, offset, filter = "") => {
+export const getListPage = async (limit, offset, filter = "", labelid = "") => {
   const userid = User.getInstance().user.id;
+  console.log(filter);
 
   let total = await db_all(
     "SELECT COUNT(*) as total FROM expressions WHERE userid = ?" +
       (filter ? ` AND phrase LIKE ? ` : ""),
     filter ? [userid, filter] : [userid]
   );
+  console.log(total);
 
   const rows = await db_all(
-    `SELECT * FROM expressions
-     WHERE userid = ?` +
-      (filter ? ` AND phrase LIKE ? ` : "") +
+    `SELECT  expressions.*,  
+    labels.name AS label
+    FROM expressions
+    LEFT JOIN labels  
+    ON expressions.labelid = labels.id
+    WHERE expressions.userid = ?` +
+      (filter ? ` AND expressions.phrase LIKE ? ` : "") +
+      (labelid ? ` AND expressions.labelid = ${labelid} ` : "") +
       `ORDER BY id DESC
     LIMIT ? OFFSET ?`,
     filter ? [userid, filter, limit, offset] : [userid, limit, offset]
@@ -45,7 +58,7 @@ export const getListPage = async (limit, offset, filter = "") => {
   if (!rows) return [[], total];
   return { list: rows, total };
 };
-export const getUnreadListByToken = async (offset_ms = 0) => {
+export const getUnreadListByToken = async (offset_ms = 0, labelid = "") => {
   let offset_s = offset_ms / 1000;
   const userid = User.getInstance().user.id;
   const rows = await db_all(
@@ -56,7 +69,8 @@ export const getUnreadListByToken = async (offset_ms = 0) => {
     date() 
     FROM expressions 
     WHERE userid = ?  
-    AND  date((nextDate-?)/1000,'unixepoch') <= date(UNIXEPOCH()-?,'unixepoch')`,
+    AND  date((nextDate-?)/1000,'unixepoch') <= date(UNIXEPOCH()-?,'unixepoch')` +
+      (labelid ? ` AND expressions.labelid = ${labelid} ` : ""),
     [offset_s, offset_ms, userid, offset_ms, offset_s]
   );
 
@@ -67,10 +81,10 @@ export const getUnreadListByToken = async (offset_ms = 0) => {
 
 export const createExpression = async (set) => {
   const userid = User.getInstance().user.id;
-  const categoryid = set.hasOwnProperty("categoryid") ? set.categoryid : null;
+  const labelid = set.hasOwnProperty("labelid") ? set.labelid : null;
   let today = new Date().getTime();
   return await db_run(
-    `INSERT INTO expressions (expression, stage, phrase, history,nextDate,userid,categoryid) VALUES (?,?,?,?,?,?,?)`,
+    `INSERT INTO expressions (expression, stage, phrase, history,nextDate,userid,labelid) VALUES (?,?,?,?,?,?,?)`,
     [
       set.expression,
       0,
@@ -78,7 +92,7 @@ export const createExpression = async (set) => {
       JSON.stringify([{ action: "add", date: new Date().getTime() }]),
       today,
       userid,
-      categoryid,
+      labelid,
     ]
   );
 };
@@ -99,15 +113,20 @@ export const deleteAllExpressions = async () => {
 };
 export const updateExpression = async (set) => {
   let dataUpd;
+  let labelid = set.hasOwnProperty("labelid") ? set.labelid : null;
   //expression, stage, phrase, history,nextDate,id
-  if (set.hasOwnProperty("expression") || set.hasOwnProperty("phrase")) {
+  if (
+    set.hasOwnProperty("expression") ||
+    set.hasOwnProperty("phrase") ||
+    set.hasOwnProperty("labelid")
+  ) {
     dataUpd = [
       set.expression,
       null,
       set.phrase,
       null,
       null,
-      set.category,
+      labelid === "" ? null : set.labelid,
       set.id,
     ]; //one
   } else {
@@ -128,7 +147,7 @@ export const updateExpression = async (set) => {
     phrase = COALESCE(?,phrase), 
     history = COALESCE(?,history),
     nextDate = COALESCE(?,nextDate),
-    categoryid = COALESCE(?,categoryid)
+    labelid = ${set.hasOwnProperty("labelid") ? "?" : "COALESCE(?,labelid)"}
     WHERE id = ?`,
     [...dataUpd]
   );

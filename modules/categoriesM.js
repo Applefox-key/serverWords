@@ -39,7 +39,7 @@ export const getCategoryById = async (id, isPublic = false) => {
 export const getCategoryAll = async () => {
   // let query = `SELECT * FROM categories WHERE userid=?`;
 
-  let query = `SELECT categories.id, categories.name AS name,categories.userid as userid, COUNT(collections.id) AS collection_count
+  let query = `SELECT categories.id, categories.name AS name, categories.userid as userid, COUNT(collections.id) AS collection_count
   FROM categories  
   LEFT JOIN collections  
   ON collections.categoryid = categories.id

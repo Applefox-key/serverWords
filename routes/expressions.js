@@ -63,8 +63,9 @@ router.delete("/", async (req, res, next) => {
 //user's list
 router.get("/", async (req, res, next) => {
   const filter = req.query.filter ? `%${req.query.filter}%` : "";
+  const labelid = req.query.labelid ? req.query.labelid : "";
   try {
-    let list = await exp.getList(filter);
+    let list = await exp.getList(filter, labelid);
     res
       .status(!list ? 400 : 200)
       .json(!list ? { error: "session not found" } : { data: list });
@@ -77,9 +78,14 @@ router.get("/page/:page", async (req, res, next) => {
   const page = req.query.page;
   const limit = req.query.limit;
   const filter = req.query.filter ? `%${req.query.filter}%` : "";
-
+  const labelid = req.query.labelid ? req.query.labelid : "";
   try {
-    let list = await exp.getListPage(limit, (page - 1) * limit, filter);
+    let list = await exp.getListPage(
+      limit,
+      (page - 1) * limit,
+      filter,
+      labelid
+    );
     res
       .status(!list ? 400 : 200)
       .json(!list ? { error: "session not found" } : { data: list });
@@ -89,8 +95,9 @@ router.get("/page/:page", async (req, res, next) => {
 });
 //unread list by token
 router.get("/unread", async (req, res, next) => {
+  const labelid = req.query.labelid ? req.query.labelid : "";
   try {
-    let list = await exp.getUnreadListByToken(req.query.offset_ms);
+    let list = await exp.getUnreadListByToken(req.query.offset_ms, labelid);
     res
       .status(!list ? 400 : 200)
       .json(!list ? { error: "session not found" } : { data: list });
