@@ -13,7 +13,6 @@ export const checkIsFolderExist = (foldArr) => {
     }
   });
 };
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const userId = User.getInstance().user.id;

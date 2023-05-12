@@ -68,7 +68,6 @@ export const copyImg = async (set, fromUser, collToId) => {
   const userId = User.getInstance().user.id.toString();
   let resultQ = "";
   let resultA = "";
-
   if (!set.imgA && !set.imgQ) return [resultQ, resultA];
   const fromFolderPath = path.join(
     "./",
@@ -76,7 +75,7 @@ export const copyImg = async (set, fromUser, collToId) => {
     fromUser.userFromId,
     fromUser.colFromId
   );
-  checkIsFolderExist("content", userId, collToId.toString());
+  checkIsFolderExist(["content", userId, collToId.toString()]);
   const toFolderPath = path.join("./", "content", userId, collToId.toString());
 
   try {
@@ -113,6 +112,7 @@ export const saveImg = async (set, images, tocollectionId, fromUser = "") => {
   let imageQUrl = set.imgQ ? set.imgQ : "";
   //no new img files and is no from public return as it is
   if (!images && !fromUser) return [imageQUrl, imageAUrl];
+
   if (fromUser) {
     //copy from user public
     const [imageQUrl, imageAUrl] = await copyImg(set, fromUser, tocollectionId);

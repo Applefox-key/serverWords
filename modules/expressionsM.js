@@ -33,14 +33,12 @@ export const getList = async (filter = "", labelid = "") => {
 
 export const getListPage = async (limit, offset, filter = "", labelid = "") => {
   const userid = User.getInstance().user.id;
-  console.log(filter);
 
   let total = await db_all(
     "SELECT COUNT(*) as total FROM expressions WHERE userid = ?" +
       (filter ? ` AND phrase LIKE ? ` : ""),
     filter ? [userid, filter] : [userid]
   );
-  console.log(total);
 
   const rows = await db_all(
     `SELECT  expressions.*,  
