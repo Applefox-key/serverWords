@@ -117,6 +117,11 @@ router.post("/copy", async (req, res, next) => {
   try {
     const userId = User.getInstance().user.id;
     const collectionFrom = await pb.getOneWithContent(req.body.data.colId);
+    // console.log("resArr");
+    // console.log(resArr);
+    // let collectionFrom = common.formatCollectionContent(resArr);
+    console.log("collectionFrom");
+    console.log(collectionFrom);
     // let catid = collectionFrom[0].categoryid;
     let cat = collectionFrom[0].category;
     let fromUser = {
@@ -139,11 +144,12 @@ router.post("/copy", async (req, res, next) => {
       //there is no such category ? -> add and get it's id
       if (!catid) catid = await createUserCategory(cat);
     }
+    console.log("catid", catid);
 
     //create collection
     let resp = await col.createCollection({
       name: collectionFrom[0].name,
-      categoryid: catid.id,
+      categoryid: catid ? catid.id : null,
       note: collectionFrom[0].note,
     });
 
@@ -151,9 +157,10 @@ router.post("/copy", async (req, res, next) => {
       res.status(400).json({ error: resp ? resp.error : "error" });
       return;
     }
-
+    console.log("collectionFrom", collectionFrom);
     //create content
     let list = collectionFrom;
+    console.log("list", list);
     if (!Array.isArray(list)) {
       res.status(400).json({ error: "content is not an Array" });
       return;
@@ -171,6 +178,7 @@ router.post("/copy", async (req, res, next) => {
         res.status(400).json({ error: result.error });
         return;
       }
+      console.log(element);
     });
     if (!err)
       res
