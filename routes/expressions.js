@@ -60,12 +60,25 @@ router.delete("/", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
+//all by userid and ids array
+router.delete("/some", async (req, res, next) => {
+  try {
+    let list = req.body.data.list;
+    let result = await exp.deleteSomeExpressions(list);
+    res
+      .status(result.error ? 400 : 200)
+      .json(result.error ? { error: result.error } : { message: "success" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 //user's list
 router.get("/", async (req, res, next) => {
   const filter = req.query.filter ? `%${req.query.filter}%` : "";
   const labelid = req.query.labelid ? req.query.labelid : "";
+  const stage = req.query.hasOwnProperty("stage") ? req.query.stage : "";
   try {
-    let list = await exp.getList(filter, labelid);
+    let list = await exp.getList(filter, labelid, stage);
     res
       .status(!list ? 400 : 200)
       .json(!list ? { error: "session not found" } : { data: list });
@@ -106,12 +119,14 @@ router.get("/page/:page", async (req, res, next) => {
   const limit = req.query.limit;
   const filter = req.query.filter ? `%${req.query.filter}%` : "";
   const labelid = req.query.labelid ? req.query.labelid : "";
+  const stage = req.query.hasOwnProperty("stage") ? req.query.stage : "";
   try {
     let list = await exp.getListPage(
       limit,
       (page - 1) * limit,
       filter,
-      labelid
+      labelid,
+      stage
     );
     res
       .status(!list ? 400 : 200)

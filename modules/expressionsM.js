@@ -11,9 +11,14 @@ export const getAllUsersExpressions = async () => {
     return { error: error.message };
   }
 };
-export const getList = async (filter = "", labelid = "") => {
+export const getList = async (filter = "", labelid = "", stage = "") => {
   const userid = User.getInstance().user.id;
-
+  const label_Part = !labelid
+    ? ""
+    : labelid !== "null"
+    ? ` AND expressions.labelid = ${labelid} `
+    : ` AND expressions.labelid IS NULL OR expressions.labelid = "" `;
+  const stage_Part = stage === "" ? "" : ` AND expressions.stage = ${stage} `;
   const rows = await db_all(
     `SELECT expressions.*,  
      labels.name AS label
@@ -22,7 +27,8 @@ export const getList = async (filter = "", labelid = "") => {
      ON expressions.labelid = labels.id
      WHERE expressions.userid = ?` +
       (filter ? ` AND expressions.phrase LIKE  ? ` : "") +
-      (labelid ? ` AND expressions.labelid = ${labelid} ` : "") +
+      label_Part +
+      stage_Part +
       `ORDER BY id DESC`,
     filter ? [userid, filter] : [userid]
   );
@@ -31,7 +37,13 @@ export const getList = async (filter = "", labelid = "") => {
   return rows;
 };
 
-export const getListPage = async (limit, offset, filter = "", labelid = "") => {
+export const getListPage = async (
+  limit,
+  offset,
+  filter = "",
+  labelid = "",
+  stage = ""
+) => {
   const userid = User.getInstance().user.id;
 
   let total = await db_all(
@@ -39,7 +51,12 @@ export const getListPage = async (limit, offset, filter = "", labelid = "") => {
       (filter ? ` AND phrase LIKE ? ` : ""),
     filter ? [userid, filter] : [userid]
   );
-
+  const label_Part = !labelid
+    ? ""
+    : labelid !== "null"
+    ? ` AND expressions.labelid = ${labelid} `
+    : ` AND expressions.labelid IS NULL OR expressions.labelid = "" `;
+  const stage_Part = stage === "" ? "" : ` AND expressions.stage = ${stage} `;
   const rows = await db_all(
     `SELECT  expressions.*,  
     labels.name AS label
@@ -48,7 +65,8 @@ export const getListPage = async (limit, offset, filter = "", labelid = "") => {
     ON expressions.labelid = labels.id
     WHERE expressions.userid = ?` +
       (filter ? ` AND expressions.phrase LIKE ? ` : "") +
-      (labelid ? ` AND expressions.labelid = ${labelid} ` : "") +
+      label_Part +
+      stage_Part +
       `ORDER BY id DESC
     LIMIT ? OFFSET ?`,
     filter ? [userid, filter, limit, offset] : [userid, limit, offset]
@@ -94,13 +112,23 @@ export const createExpression = async (set) => {
     ]
   );
 };
-
 export const deleteExpression = async (id) => {
   const userid = User.getInstance().user.id;
   let res = await db_run(
     `DELETE FROM expressions WHERE userid = ${userid} ${
       id === "*" ? "" : " AND id = " + id
     }`
+  );
+  return res;
+};
+export const deleteSomeExpressions = async (idsList) => {
+  console.log(idsList);
+
+  const placeholders = idsList.map(() => "?").join(",");
+  const userid = User.getInstance().user.id;
+  let res = await db_run(
+    `DELETE FROM expressions WHERE userid = ${userid} AND id IN (${placeholders})`,
+    idsList
   );
   return res;
 };
