@@ -13,7 +13,7 @@ export const getAllWithContent = async () => {
        LEFT JOIN  categories  
        ON collections.categoryid = categories.id
        WHERE isPublic = ${true}
-       ORDER BY collections.categoryid ASC, collections.name ASC, content.question ASC;
+       ORDER BY categories.name ASC, collections.name ASC, content.question ASC;
        `
   );
 
