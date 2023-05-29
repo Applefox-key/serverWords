@@ -12,7 +12,9 @@ export const getAllWithContent = async () => {
        ON collections.id = content.collectionid
        LEFT JOIN  categories  
        ON collections.categoryid = categories.id
-       WHERE isPublic = ${true}`
+       WHERE isPublic = ${true}
+       ORDER BY collections.categoryid ASC, collections.name ASC, content.question ASC;
+       `
   );
 
   if (!rows) return [];
@@ -32,7 +34,7 @@ export const getOneWithContent = async (id) => {
     ON collections.categoryid = categories.id
     WHERE collections.id = ? 
           AND isPublic = ${true}
-    `,
+    ORDER BY collections.name ASC, content.question ASC;`,
     [id]
   );
 
