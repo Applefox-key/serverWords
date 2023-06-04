@@ -2,9 +2,9 @@ import { db_run, db_all } from "../helpers/dbAsync.js";
 import { User } from "../classes/User.js";
 import { saveImg } from "./images.js";
 
-export const formatCollectionContent = (data) => {
+export const formatCollectionContent = (data, addIsMy = false) => {
   if (data == []) return [];
-
+  const userid = User.getInstance().user.id;
   const map = new Map();
   data.forEach((el) => {
     if (!map.has(el.id))
@@ -31,6 +31,7 @@ export const formatCollectionContent = (data) => {
         imgQ: el.imgQ,
         collectionid: el.id,
       });
+      if (addIsMy) val.isMy = userid === el.userid;
       map.set(el.id, val);
     }
   });

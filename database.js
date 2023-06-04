@@ -149,6 +149,28 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         FOREIGN KEY(collectionid) REFERENCES collections(id)
         ON DELETE CASCADE ON UPDATE NO ACTION)`,
         (err) => {}
+      ); //playlists
+      // db.run(`DROP TABLE playlists;`, (err) => {});
+      // db.run(`DROP TABLE playlistsItems;`, (err) => {});
+      db.run(
+        `CREATE TABLE playlists (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name text NOT NULL,
+                  userid integer,
+                  FOREIGN KEY(userid) REFERENCES users(id)
+                  ON DELETE CASCADE  ON UPDATE NO ACTION)`,
+        (err) => {}
+      );
+
+      db.run(
+        `CREATE TABLE playlistsItems (
+                  playlistid INTEGER,
+                  collectionid INTEGER,
+                  FOREIGN KEY(playlistid) REFERENCES playlists(id)
+                  ON DELETE CASCADE  ON UPDATE NO ACTION
+                  FOREIGN KEY(collectionid) REFERENCES collections(id)
+                  ON DELETE CASCADE  ON UPDATE NO ACTION)`,
+        (err) => {}
       );
     });
     //----------------------------------------------------------------------------

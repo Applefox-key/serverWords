@@ -9,6 +9,7 @@ import resetpasswordRouter from "./routes/resetpassword.js";
 import categoriesRouter from "./routes/categories.js";
 import imgRouter from "./routes/img.js";
 import labelsRouter from "./routes/labels.js";
+import playlistsRouter from "./routes/playlists.js";
 import * as usr from "./modules/usersM.js";
 import { User } from "./classes/User.js";
 
@@ -48,6 +49,7 @@ app.use("/categories", categoriesRouter);
 app.use("/resetpassword", resetpasswordRouter);
 app.use("/img", imgRouter);
 app.use("/labels", labelsRouter);
+app.use("/playlists", playlistsRouter);
 // Default response for any other request
 app.use(function (req, res) {
   res.status(404).json({ error: "bad request" });
@@ -66,7 +68,7 @@ export async function autorisation(req, res, next) {
 
   let userRow = await usr.getUserByToken(token);
   if (!userRow)
-    return res.status(403).json({ error: "User not found. Please relogin!" });
+    return res.status(403).json({ error: "User's not found. Please relogin!" });
 
   let user = User.getInstance();
 

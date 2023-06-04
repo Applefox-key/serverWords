@@ -113,6 +113,7 @@ export const createUserCategory = async (name) => {
 export const editCategory = async (name, id, isPublic = false) => {
   let categ = await getCategoryByName(name, isPublic);
 
+  if (categ && categ.id.toString() === id.toString()) return ""; //nothing have been changed
   if (categ) return { error: `category with name ${name} is already exist` };
   if (isPublic)
     return await db_run(

@@ -232,7 +232,19 @@ router.get("/:id", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
+//Edit collection by id
+router.patch("/share/:id", async (req, res, next) => {
+  try {
+    let list = await col.switchIsPublic(req.body.data.isPublic, req.params.id);
+    res
+      .status(!list ? 400 : 200)
+      .json(!list ? { error: "session not found" } : { message: "success" });
+  } catch (error) {
+    console.log(error.message);
 
+    res.status(400).json({ error: error.message });
+  }
+});
 //Edit collection by id
 router.patch("/:id", async (req, res, next) => {
   try {

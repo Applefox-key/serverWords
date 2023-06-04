@@ -104,3 +104,28 @@ export const editCollection = async (set, id) => {
     [set.name, set.note, set.categoryid, set.isPublic, set.isFavorite, id]
   );
 };
+
+//switch  collection attribute isPublic
+export const switchIsPublic = async (isPublic, collectionId) => {
+  const userid = User.getInstance().user.id;
+  const update_query = `
+    UPDATE collections
+    SET isPublic = ?
+    WHERE id = ?;`;
+  const delete_query = `
+    DELETE FROM playlistsItems
+    WHERE collectionid = ?
+    AND playlistid IN (
+      SELECT id
+      FROM playlists
+      WHERE userid != ?
+    )
+    AND ? = 0;
+  `;
+
+  const updateParams = [isPublic, collectionId];
+  const deleteParams = [collectionId, userid, isPublic];
+
+  await db_run(update_query, updateParams);
+  return await db_run(delete_query, deleteParams);
+};
