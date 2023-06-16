@@ -89,7 +89,8 @@ export const getById = async (id) => {
 export const getAll = async () => {
   const query = `
     SELECT playlists.id AS playlist_id, playlists.name AS playlist_name, playlists.userid AS playlist_userid,
-           IFNULL(JSON_GROUP_ARRAY(JSON_OBJECT('id', collections.id, 'name', collections.name)),'[]') AS collections
+           IFNULL(JSON_GROUP_ARRAY(JSON_OBJECT('id', collections.id, 'name', collections.name)),'[]') AS collections,
+           CASE WHEN collections.userid = ? THEN 1 ELSE 0 END AS isMy
     FROM playlists
     LEFT JOIN playlistsItems ON playlistsItems.playlistid = playlists.id
     LEFT JOIN collections ON collections.id = playlistsItems.collectionid
