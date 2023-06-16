@@ -89,8 +89,10 @@ export const getById = async (id) => {
 export const getAll = async () => {
   const query = `
     SELECT playlists.id AS playlist_id, playlists.name AS playlist_name, playlists.userid AS playlist_userid,
-           IFNULL(JSON_GROUP_ARRAY(JSON_OBJECT('id', collections.id, 'name', collections.name)),'[]') AS collections,
-           CASE WHEN collections.userid = ? THEN 1 ELSE 0 END AS isMy
+           IFNULL(JSON_GROUP_ARRAY(JSON_OBJECT('id', collections.id, 
+                                              'name', collections.name,
+                                              'isMy', CASE WHEN collections.userid = ? THEN 1 ELSE 0 END)),
+                                              '[]') AS collections
     FROM playlists
     LEFT JOIN playlistsItems ON playlistsItems.playlistid = playlists.id
     LEFT JOIN collections ON collections.id = playlistsItems.collectionid
@@ -99,7 +101,7 @@ export const getAll = async () => {
     `;
   // AND (collections.userid = ? OR collections.ispublic = 1)
   const userid = User.getInstance().user.id;
-  const params = [userid];
+  const params = [userid, userid];
 
   const result = await db_all(query, params);
   const resultArr = result.map((row) => {
