@@ -85,6 +85,7 @@ export const getUnreadListByToken = async (offset_ms = 0, labelid = "") => {
     date() 
     FROM expressions 
     WHERE userid = ?  
+    AND stage < 9
     AND  date((nextDate-?)/1000,'unixepoch') <= date(UNIXEPOCH()-?,'unixepoch')` +
       (labelid ? ` AND expressions.labelid = ${labelid} ` : ""),
     [offset_s, offset_ms, userid, offset_ms, offset_s]
