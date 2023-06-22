@@ -112,6 +112,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
           userid integer,
           categoryid integer,    
           labelid integer,       
+          note text,       
           FOREIGN KEY(categoryid) REFERENCES categories(id)
           ON DELETE SET NULL ON UPDATE NO ACTION,
           FOREIGN KEY(labelid) REFERENCES labels(id) 
@@ -120,6 +121,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
           ON DELETE CASCADE  ON UPDATE NO ACTION)`,
         (err) => {}
       );
+
       //collections
       db.run(
         `CREATE TABLE collections (

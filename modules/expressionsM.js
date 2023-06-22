@@ -101,7 +101,7 @@ export const createExpression = async (set) => {
   const labelid = set.hasOwnProperty("labelid") ? set.labelid : null;
   let today = new Date().getTime();
   return await db_run(
-    `INSERT INTO expressions (expression, stage, phrase, history,nextDate,userid,labelid) VALUES (?,?,?,?,?,?,?)`,
+    `INSERT INTO expressions (expression, stage, phrase, history,nextDate,userid,labelid,note) VALUES (?,?,?,?,?,?,?,?)`,
     [
       set.expression,
       0,
@@ -110,6 +110,7 @@ export const createExpression = async (set) => {
       today,
       userid,
       labelid,
+      set.note,
     ]
   );
 };
@@ -145,7 +146,8 @@ export const updateExpression = async (set) => {
   if (
     set.hasOwnProperty("expression") ||
     set.hasOwnProperty("phrase") ||
-    set.hasOwnProperty("labelid")
+    set.hasOwnProperty("labelid") ||
+    set.hasOwnProperty("note")
   ) {
     dataUpd = [
       set.expression,
@@ -154,6 +156,7 @@ export const updateExpression = async (set) => {
       null,
       null,
       labelid === "" ? null : set.labelid,
+      set.note,
       set.id,
     ]; //one
   } else {
@@ -174,7 +177,8 @@ export const updateExpression = async (set) => {
     phrase = COALESCE(?,phrase), 
     history = COALESCE(?,history),
     nextDate = COALESCE(?,nextDate),
-    labelid = ${set.hasOwnProperty("labelid") ? "?" : "COALESCE(?,labelid)"}
+    labelid = ${set.hasOwnProperty("labelid") ? "?" : "COALESCE(?,labelid)"},
+    note = COALESCE(?,note)
     WHERE id = ?`,
     [...dataUpd]
   );
