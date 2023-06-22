@@ -167,6 +167,7 @@ export const updateExpression = async (set) => {
       JSON.stringify(set.history),
       set.nextDate,
       null,
+      null,
       set.id,
     ]; //one
   }
