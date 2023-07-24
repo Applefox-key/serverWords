@@ -4,16 +4,18 @@ export const formatCategoriesCollection = (result, addIsMy = false) => {
   if (result == []) return [];
 
   const formattedArray = [];
+  let idArray = [];
   const groupedMap = new Map();
 
   for (const row of result) {
     const { id, name, userid, collectionid, isPublic, collectionName, isMy } =
       row;
 
-    if (!groupedMap.has(el.name.toLowerCase())) {
-      groupedMap.set(el.name.toLowerCase(), {
+    if (!idArray.includes(id)) {
+      idArray.push(id);
+      groupedMap.set(name ? name.toLowerCase() : "No category", {
         id: id,
-        name: el.name.toLowerCase(),
+        name: name ? name.toLowerCase() : "No category",
         collections: [],
       });
     }
@@ -25,7 +27,9 @@ export const formatCategoriesCollection = (result, addIsMy = false) => {
         isMy: isMy,
       };
 
-      groupedMap.get(id).collections.push(collectionObj);
+      groupedMap
+        .get(name ? name.toLowerCase() : "No category")
+        .collections.push(collectionObj);
     }
   }
 
