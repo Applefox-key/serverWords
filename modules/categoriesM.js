@@ -10,10 +10,10 @@ export const formatCategoriesCollection = (result, addIsMy = false) => {
     const { id, name, userid, collectionid, isPublic, collectionName, isMy } =
       row;
 
-    if (!groupedMap.has(id)) {
-      groupedMap.set(id, {
+    if (!groupedMap.has(el.name.toLowerCase())) {
+      groupedMap.set(el.name.toLowerCase(), {
         id: id,
-        name: name,
+        name: el.name.toLowerCase(),
         collections: [],
       });
     }
