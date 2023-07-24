@@ -1,6 +1,40 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
 import { User } from "../classes/User.js";
+export const formatCategoriesCollection = (result, addIsMy = false) => {
+  if (result == []) return [];
 
+  const formattedArray = [];
+  const groupedMap = new Map();
+
+  for (const row of result) {
+    const { id, name, userid, collectionid, isPublic, collectionName, isMy } =
+      row;
+
+    if (!groupedMap.has(id)) {
+      groupedMap.set(id, {
+        id: id,
+        name: name,
+        collections: [],
+      });
+    }
+
+    if (collectionid !== null) {
+      const collectionObj = {
+        collectionid: collectionid,
+        collectionName: collectionName,
+        isMy: isMy,
+      };
+
+      groupedMap.get(id).collections.push(collectionObj);
+    }
+  }
+
+  for (const group of groupedMap.values()) {
+    formattedArray.push(group);
+  }
+
+  return formattedArray;
+};
 //all by admin
 export const getAllCategories = async (isPublic = false) => {
   const query = isPublic
@@ -77,6 +111,29 @@ export const getPubCategoryAll = async (isPublic = false) => {
   }, new Map());
   const uniqueCategories = Array.from(categoriesMap.values());
   return uniqueCategories;
+};
+//get ALL with collections list
+export const getCategoryWithCollections = async (isPublic = false) => {
+  // let query = `SELECT * FROM categories WHERE userid=?`;
+  let queryPart = "";
+  let queryPart0 = "";
+  const userid = User.getInstance().user.id;
+  if (isPublic) {
+    queryPart += ` WHERE collections.isPublic=${true}`;
+    queryPart0 += `, CASE WHEN collections.userid = ${userid} THEN 1 ELSE 0 END AS isMy`;
+  } else queryPart += ` WHERE categories.userid=${userid}`;
+
+  let query = `SELECT categories.id, categories.name AS name, categories.userid as userid, 
+              collections.id AS collectionid, collections.isPublic as isPublic, collections.name as collectionName ${queryPart0}
+  FROM collections 
+  LEFT JOIN categories
+  ON collections.categoryid = categories.id
+  ${queryPart}
+  ORDER BY name ASC;`;
+  console.log(query);
+
+  let params = [];
+  return await db_all(query, params);
 };
 //create (one for user and return new row's id )or (create one for public and return new row's id)
 export const createUserCategory = async (name) => {

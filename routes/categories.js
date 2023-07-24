@@ -50,6 +50,30 @@ router.get("/user", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
+
+//get all with collections
+router.get("/user/collections", async (req, res, next) => {
+  try {
+    let list = await categ.getCategoryWithCollections();
+    let resArr = categ.formatCategoriesCollection(list);
+    res
+      .status(!resArr ? 400 : 200)
+      .json(!resArr ? { error: "categories not found" } : { data: resArr });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}); //get all with collections
+router.get("/public/collections", async (req, res, next) => {
+  try {
+    let list = await categ.getCategoryWithCollections(true);
+    let resArr = categ.formatCategoriesCollection(list, true);
+    res
+      .status(!resArr ? 400 : 200)
+      .json(!resArr ? { error: "categories not found" } : { data: resArr });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 //create users category
 router.post("/user", async (req, res, next) => {
   try {
