@@ -7,8 +7,16 @@ export const formatCategoriesCollection = (result, pub = false) => {
   const groupedMap = new Map();
 
   for (const row of result) {
-    const { id, name, userid, collectionid, isPublic, collectionName, isMy } =
-      row;
+    const {
+      id,
+      name,
+      userid,
+      collectionid,
+      isFavorite,
+      isPublic,
+      collectionName,
+      isMy,
+    } = row;
     let categoryName = name ? name.toLowerCase() : "No category";
     if (!groupedMap.has(categoryName)) {
       groupedMap.set(categoryName, {
@@ -22,11 +30,15 @@ export const formatCategoriesCollection = (result, pub = false) => {
       const collectionObj = {
         collectionid: collectionid,
         collectionName: collectionName,
-        isMy: isMy,
       };
+      if (!pub) {
+        collectionObj.isPublic = isPublic;
+        collectionObj.isFavorite = isFavorite;
+      } else collectionObj.isMy = isMy;
       let elem = groupedMap.get(categoryName);
       elem.collections.push(collectionObj);
       if (pub && !elem.id.includes(id)) elem.id.push(collectionid);
+      else isFavorite;
     }
   }
   for (const group of groupedMap.values()) {
@@ -124,7 +136,7 @@ export const getCategoryWithCollections = async (isPublic = false) => {
   } else queryPart += ` WHERE categories.userid=${userid}`;
 
   let query = `SELECT categories.id, categories.name AS name, categories.userid as userid, 
-              collections.id AS collectionid, collections.isPublic as isPublic, collections.name as collectionName ${queryPart0}
+              collections.id AS collectionid, collections.isFavorite, collections.isPublic as isPublic, collections.name as collectionName ${queryPart0}
   FROM collections 
   LEFT JOIN categories
   ON collections.categoryid = categories.id
