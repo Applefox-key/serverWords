@@ -26,7 +26,7 @@ export const formatCategoriesCollection = (result, pub = false) => {
       };
       let elem = groupedMap.get(categoryName);
       elem.collections.push(collectionObj);
-      if (pub && !elem.id.includes(id)) elem.id.push(id);
+      if (pub && !elem.id.includes(id)) elem.id.push(collectionid);
     }
   }
   for (const group of groupedMap.values()) {
