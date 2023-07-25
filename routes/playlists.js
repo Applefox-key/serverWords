@@ -28,7 +28,6 @@ app.use(bodyParser.json());
 router.get("/", async (req, res, next) => {
   try {
     let list = await pl.getAll();
-    console.log(list[0].collections);
     res
       .status(!list ? 400 : 200)
       .json(!list ? { error: "playlist not found" } : { data: list });

@@ -64,20 +64,13 @@ export const getOneWithContent = async (id) => {
 
 //get users all public collections (list)
 export const getAll = async () => {
-  console.log("111111");
-  console.log(User.getInstance());
-
   const userid = User.getInstance().user.id;
-
-  console.log(userid);
-  // const rows = await db_all(`SELECT * FROM collections WHERE isPublic=${true}`);
   const rows = await db_all(`
   SELECT *,
     CASE WHEN userid = ${userid} THEN 1 ELSE 0 END AS isMy
   FROM collections
   WHERE isPublic = ${true}
 `);
-  console.log(rows);
 
   if (!rows) return [];
   return rows;

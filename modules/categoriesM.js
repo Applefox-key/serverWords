@@ -1,21 +1,19 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
 import { User } from "../classes/User.js";
-export const formatCategoriesCollection = (result, addIsMy = false) => {
+export const formatCategoriesCollection = (result, pub = false) => {
   if (result == []) return [];
 
   const formattedArray = [];
-  let idArray = [];
   const groupedMap = new Map();
 
   for (const row of result) {
     const { id, name, userid, collectionid, isPublic, collectionName, isMy } =
       row;
-
-    if (!idArray.includes(id)) {
-      idArray.push(id);
-      groupedMap.set(name ? name.toLowerCase() : "No category", {
-        id: id,
-        name: name ? name.toLowerCase() : "No category",
+    let categoryName = name ? name.toLowerCase() : "No category";
+    if (!groupedMap.has(categoryName)) {
+      groupedMap.set(categoryName, {
+        id: pub ? [] : id,
+        name: categoryName,
         collections: [],
       });
     }
@@ -26,13 +24,11 @@ export const formatCategoriesCollection = (result, addIsMy = false) => {
         collectionName: collectionName,
         isMy: isMy,
       };
-
-      groupedMap
-        .get(name ? name.toLowerCase() : "No category")
-        .collections.push(collectionObj);
+      let elem = groupedMap.get(categoryName);
+      elem.collections.push(collectionObj);
+      if (pub && !elem.id.includes(id)) elem.id.push(id);
     }
   }
-
   for (const group of groupedMap.values()) {
     formattedArray.push(group);
   }
@@ -134,7 +130,6 @@ export const getCategoryWithCollections = async (isPublic = false) => {
   ON collections.categoryid = categories.id
   ${queryPart}
   ORDER BY name ASC;`;
-  console.log(query);
 
   let params = [];
   return await db_all(query, params);

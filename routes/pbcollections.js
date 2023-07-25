@@ -30,7 +30,6 @@ router.get("/content", async (req, res, next) => {
       res.status(400).json({ error: "session not found" });
       return;
     }
-    console.log(list);
 
     let result = com.formatCollectionContent(list, true);
     res.status(200).json({ data: result });
@@ -46,7 +45,6 @@ router.get("/count", async (req, res, next) => {
       res.status(400).json({ error: "session not found" });
       return;
     }
-    console.log(list);
 
     let result = list; // com.formatCollectionContent(list);
     res.status(200).json({ data: result });

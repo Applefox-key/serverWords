@@ -115,7 +115,7 @@ router.get("/:id/collections", async (req, res, next) => {
 router.patch("/:id", async (req, res, next) => {
   try {
     let result = await categ.editCategory(req.body.data.name, req.params.id);
-    console.log(result);
+
     res
       .status(result.error ? 400 : 200)
       .json(result.error ? { error: result.error } : { message: "success" });

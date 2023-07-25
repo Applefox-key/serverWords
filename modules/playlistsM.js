@@ -106,21 +106,12 @@ export const getAll = async () => {
   const result = await db_all(query, params);
   const resultArr = result.map((row) => {
     const collections = JSON.parse(row.collections);
-    console.log("row.collections");
-    console.log(row.collections);
-    console.log("collections");
-    console.log(collections);
-    console.log("collections[0]");
-    console.log(collections[0]);
-    console.log("collections[0].id === null ");
-    console.log(collections[0].id === null);
     return {
       id: row.playlist_id,
       name: row.playlist_name,
       collections: collections[0].id === null ? [] : collections,
     };
   });
-  console.log(resultArr);
 
   return resultArr;
 };
@@ -128,38 +119,12 @@ export const getAll = async () => {
 export const getListAll = async () => {
   let query = `SELECT * FROM playlists WHERE userid=?`;
 
-  // let query = `SELECT playlists.id AS id, playlists.name AS name, playlists.userid as userid, COUNT(expressions.id) AS expressions_count
-  // FROM labels
-  // LEFT JOIN expressions
-  // ON expressions.labelid = labels.id
-  //  WHERE labels.userid=?
-  //  GROUP BY labels.id`;
   const userid = User.getInstance().user.id;
   let params = [userid];
 
   return await db_all(query, params);
 };
-//get playlist content by id
-// export const getContentById = async (id) => {
-//   const query = `
-//     SELECT c.id, c.question, c.answer, c.note, c.imgA, c.imgQ
-//     FROM content c
-//     JOIN collections col ON c.collectionid = col.id
-//     JOIN playlists p ON p.id = ?
-//     WHERE instr(',' || p.collectionsid || ',', ',' || cast(col.id as text) || ',') > 0
-//     AND (col.userid = p.userid OR col.ispublic = 1)
-//   `;
 
-//   const userid = User.getInstance().user.id;
-//   let params = [id];
-
-//   let result = await db_all(query, params);
-//   console.log(result);
-
-//   if (result === []) return [];
-
-//   return result;
-// };
 export const getContentById = async (id) => {
   const query = `
     SELECT c.id, c.question, c.answer, c.note, c.imgA, c.imgQ
@@ -174,10 +139,7 @@ export const getContentById = async (id) => {
   let params = [id];
 
   let result = await db_all(query, params);
-  console.log(result);
-
   if (result === []) return [];
-
   return result;
 };
 //create (one for user and return new row's id )
@@ -197,8 +159,6 @@ export const createNew = async (name, collectionIds = null) => {
   `;
   const playlistParams = [name, userId];
   const playlistResult = await db_get(playlistQuery, playlistParams);
-  console.log("playlistResult");
-  console.log(playlistResult);
 
   // Get the inserted playlist ID
   const playlistId = playlistResult.id; //.lastID;
@@ -219,17 +179,7 @@ export const createNew = async (name, collectionIds = null) => {
 
   return playlistId;
 };
-//edit playlist
-// export const edit = async (name, listIds = null, id) => {
-//   const userid = User.getInstance().user.id;
-//   return await db_run(
-//     `UPDATE playlists set
-//       name = COALESCE(?,name),
-//       collectionsid = COALESCE(?,collectionsid)
-//                    WHERE id = ? AND userid =? `,
-//     [name, listIds, id, userid]
-//   );
-// };
+
 export const edit = async (name, listIds = null, id) => {
   const userid = User.getInstance().user.id;
 
@@ -270,17 +220,3 @@ export const deleteOne = async (id) => {
   let res = await db_run(`DELETE FROM playlists WHERE id =?`, [id]);
   return res;
 };
-
-// //delete users all labels by userid
-// export const deleteAll = async () => {
-//   const userid = User.getInstance().user.id;
-
-//   let res = await db_run(`DELETE FROM labels WHERE userid = ${userid}`)
-//     .then(() => {
-//       return { message: "success" };
-//     })
-//     .catch((error) => {
-//       return { error: error };
-//     });
-//   return res;
-// };
