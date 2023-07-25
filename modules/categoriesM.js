@@ -28,8 +28,8 @@ export const formatCategoriesCollection = (result, pub = false) => {
 
     if (collectionid !== null) {
       const collectionObj = {
-        collectionid: collectionid,
-        collectionName: collectionName,
+        id: collectionid,
+        name: collectionName,
       };
       if (!pub) {
         collectionObj.isPublic = isPublic;
