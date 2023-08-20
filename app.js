@@ -10,6 +10,7 @@ import categoriesRouter from "./routes/categories.js";
 import imgRouter from "./routes/img.js";
 import labelsRouter from "./routes/labels.js";
 import playlistsRouter from "./routes/playlists.js";
+import gamesResultRouter from "./routes/gamesResult.js";
 import * as usr from "./modules/usersM.js";
 import { User } from "./classes/User.js";
 
@@ -50,6 +51,7 @@ app.use("/resetpassword", resetpasswordRouter);
 app.use("/img", imgRouter);
 app.use("/labels", labelsRouter);
 app.use("/playlists", playlistsRouter);
+app.use("/gamesresult", gamesResultRouter);
 // Default response for any other request
 app.use(function (req, res) {
   res.status(404).json({ error: "bad request" });

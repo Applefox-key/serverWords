@@ -151,9 +151,23 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         FOREIGN KEY(collectionid) REFERENCES collections(id)
         ON DELETE CASCADE ON UPDATE NO ACTION)`,
         (err) => {}
-      ); //playlists
-      // db.run(`DROP TABLE playlists;`, (err) => {});
-      // db.run(`DROP TABLE playlistsItems;`, (err) => {});
+      );
+
+      //results
+
+      db.run(
+        `CREATE TABLE gamesResult (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  contentid INTEGER,
+                  userid INTEGER,
+                  probability TEXT,
+                  FOREIGN KEY(contentid) REFERENCES content(id)
+                  ON DELETE CASCADE ON UPDATE NO ACTION, 
+                  FOREIGN KEY(userid) REFERENCES users(id)  
+                  ON DELETE CASCADE ON UPDATE NO ACTION)`,
+        (err) => {}
+      );
+
       db.run(
         `CREATE TABLE playlists (
                   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -169,9 +183,9 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
                   playlistid INTEGER,
                   collectionid INTEGER,
                   FOREIGN KEY(playlistid) REFERENCES playlists(id)
-                  ON DELETE CASCADE  ON UPDATE NO ACTION
+                  ON DELETE CASCADE ON UPDATE NO ACTION,
                   FOREIGN KEY(collectionid) REFERENCES collections(id)
-                  ON DELETE CASCADE  ON UPDATE NO ACTION)`,
+                  ON DELETE CASCADE ON UPDATE NO ACTION)`,
         (err) => {}
       );
     });
