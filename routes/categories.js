@@ -80,7 +80,11 @@ router.post("/user", async (req, res, next) => {
     let result = await categ.createUserCategory(req.body.data.name);
     res
       .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
+      .json(
+        result.error
+          ? { error: result.error }
+          : { message: "success", id: result.id }
+      );
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

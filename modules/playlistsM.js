@@ -139,7 +139,7 @@ export const getContentById = async (id) => {
   let params = [id];
 
   let result = await db_all(query, params);
-  if (result === []) return [];
+
   return result;
 };
 //create (one for user and return new row's id )

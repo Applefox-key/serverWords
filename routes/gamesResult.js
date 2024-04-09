@@ -23,7 +23,7 @@ const getListByIds = async (listIds) => {
   const query = `SELECT * FROM gamesResult WHERE userid = ? AND contentid IN (${listIds})`;
   const params = [userid];
   let result = await db_all(query, params);
-  if (result === []) return [];
+
   return result;
 };
 
