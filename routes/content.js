@@ -38,6 +38,22 @@ router.patch(
     }
   }
 );
+router.post("/move", async (req, res, next) => {
+  try {
+    const { contentIds, newCollectionId } = req.body.data;
+
+    if (!contentIds || !newCollectionId) {
+      res.status(400).json({ error: "Invalid input data" });
+      return;
+    }
+
+    await con.moveContentToNewCollection(contentIds, newCollectionId);
+
+    res.status(200).json({ message: "Content moved successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 //Get one pub content item  by id
 router.get("/pub/:id", async (req, res, next) => {
   try {

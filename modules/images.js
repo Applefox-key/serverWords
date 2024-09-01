@@ -80,8 +80,8 @@ export const copyImg = async (set, fromUser, collToId) => {
 
   try {
     if (set.imgA)
-      if (res.imgA !== "" && res.imgA !== "null") {
-        const filename = res.imgA;
+      if (set.imgA !== "" && set.imgA !== "null") {
+        const filename = set.imgA;
         const fromPath = fromFolderPath + "/" + filename;
         const pathTo = toFolderPath + "/" + filename;
         fs.copyFile(fromPath, pathTo, (err) => {
@@ -91,8 +91,8 @@ export const copyImg = async (set, fromUser, collToId) => {
         resultA = pathTo;
       }
     if (set.imgQ)
-      if (res.imgQ !== "" && res.imgQ !== "null") {
-        const filename = res.imgQ;
+      if (set.imgQ !== "" && set.imgQ !== "null") {
+        const filename = set.imgQ;
         const fromPath = fromFolderPath + "/" + filename;
         const pathTo = toFolderPath + "/" + filename;
         fs.copyFile(fromPath, pathTo, (err) => {
@@ -127,4 +127,32 @@ export const saveImg = async (set, images, tocollectionId, fromUser = "") => {
   if ("imgQfile" in images) imageQUrl = images.imgQfile[0].filename;
 
   return [imageQUrl, imageAUrl];
+};
+//replace to another collection
+export const moveImgToNewCollection = (
+  filename,
+  userId,
+  oldCollectionId,
+  newCollectionId
+) => {
+  const oldPath = path.join(
+    "content",
+    userId.toString(),
+    oldCollectionId.toString(),
+    filename
+  );
+  const newFolderPath = path.join(
+    "content",
+    userId.toString(),
+    newCollectionId.toString()
+  );
+
+  checkIsFolderExist([newFolderPath]);
+
+  const newPath = path.join(newFolderPath, filename);
+
+  fs.rename(oldPath, newPath, (err) => {
+    if (err) throw err;
+    console.log(`File moved from ${oldPath} to ${newPath}`);
+  });
 };
