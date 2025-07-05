@@ -69,7 +69,7 @@ const editProb = async (id, prob, userid) => {
   return result;
 };
 
-router.post("/get", async (req, res) => {
+router.get("/get", async (req, res) => {
   let listid = req.body.data.listid;
   let game = req.body.data.game;
   try {

@@ -30,6 +30,7 @@ export const formatCollectionContent = (data, addIsMy = false) => {
         imgA: el.imgA,
         imgQ: el.imgQ,
         collectionid: el.id,
+        ...(el.rate !== undefined ? { rate: el.rate } : {}),
       });
       if (addIsMy) val.isMy = userid === el.userid;
       map.set(el.id, val);
@@ -46,7 +47,7 @@ export const getOneWithContentAdmin = async (id) => {
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name,categoryid,
           categories.name AS category, 
-          question, answer, imgA, imgQ , content.note AS note_cont, content.id AS id_cont 
+          question, answer, imgA, imgQ, rate, content.note AS note_cont, content.id AS id_cont 
     FROM collections  
     LEFT JOIN  content  
     ON collections.id = content.collectionid
@@ -79,7 +80,7 @@ export const getAllWithContent = async (select = "") => {
   const rows = await db_all(
     `SELECT collections.id , collections.name AS name, categoryid, isPublic, isFavorite, collections.note, 
     categories.name AS category, 
-    content.note AS note_cont, content.id AS id_cont, question,answer, imgA, imgQ 
+    content.note AS note_cont, content.id AS id_cont, question,answer, imgA, imgQ, rate 
        FROM collections  LEFT JOIN  content 
        ON collections.id = content.collectionid
        LEFT JOIN  categories  
@@ -97,7 +98,7 @@ export const getAllWithContent = async (select = "") => {
 export const getAllWithContentByCategory = async (catid) => {
   const rows = await db_all(
     `SELECT collections.id , name, categoryid, collections.note, isPublic, isFavorite,
-       content.note AS note_cont, content.id AS id_cont, question,answer, imgA, imgQ  
+       content.note AS note_cont, content.id AS id_cont, question,answer, imgA, imgQ, rate  
        FROM collections  LEFT JOIN  content 
        ON collections.id = content.collectionid
        WHERE categoryid = ?  
@@ -112,7 +113,7 @@ export const getOneWithContent = async (id) => {
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name,categoryid,
           categories.name AS category, isPublic, isFavorite,
-          question, answer, imgA, imgQ , content.note AS note_cont, content.id AS id_cont 
+          question, answer, imgA, imgQ , rate, content.note AS note_cont, content.id AS id_cont
     FROM collections  
     LEFT JOIN  content  
     ON collections.id = content.collectionid
@@ -136,8 +137,16 @@ export const createCollectionContent = async (
   let [imageQUrl, imageAUrl] = await saveImg(set, images, id, fromUser);
 
   return await db_run(
-    `INSERT INTO content (question, answer, note, collectionid, imgQ, imgA) VALUES (?,?,?,?,?,?)`,
-    [set.question, set.answer, set.note, id, imageQUrl, imageAUrl]
+    `INSERT INTO content (question, answer, note,rate, collectionid, imgQ, imgA) VALUES (?,?,?,?,?,?,?)`,
+    [
+      set.question.trim(),
+      set.answer.trim(),
+      set.note.trim(),
+      set.rate,
+      id,
+      imageQUrl,
+      imageAUrl,
+    ]
   );
 };
 //delete content by collection id
