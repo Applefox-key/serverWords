@@ -26,10 +26,11 @@ export const editContent = async (set, imges) => {
       question = COALESCE(?,question),
       answer = COALESCE(?,answer),
       note = COALESCE(?,note),
+      rate = COALESCE(?,rate),
       imgQ = ?,
       imgA = ?
       WHERE id = ?`,
-    [set.question, set.answer, set.note, imageQUrl, imageAUrl, set.id]
+    [set.question, set.answer, set.note, set.rate, imageQUrl, imageAUrl, set.id]
   );
 };
 
