@@ -115,6 +115,34 @@ export const getAll = async () => {
 
   return resultArr;
 };
+export const getOneById = async (id) => {
+  const query = `
+    SELECT playlists.id AS playlist_id, playlists.name AS playlist_name, playlists.userid AS playlist_userid,
+           IFNULL(JSON_GROUP_ARRAY(JSON_OBJECT('id', collections.id, 
+                                              'name', collections.name,
+                                              'isMy', CASE WHEN collections.userid = ? THEN 1 ELSE 0 END)),
+                                              '[]') AS collections
+    FROM playlists
+    LEFT JOIN playlistsItems ON playlistsItems.playlistid = playlists.id
+    LEFT JOIN collections ON collections.id = playlistsItems.collectionid
+    WHERE playlists.userid = ? AND playlists.id = ?
+    `;
+  // AND (collections.userid = ? OR collections.ispublic = 1)
+  const userid = User.getInstance().user.id;
+  const params = [userid, userid, id];
+
+  const result = await db_all(query, params);
+  const resultArr = result.map((row) => {
+    const collections = JSON.parse(row.collections);
+    return {
+      id: row.playlist_id,
+      name: row.playlist_name,
+      collections: collections[0].id === null ? [] : collections,
+    };
+  });
+
+  return resultArr;
+};
 //get ALL playlists list
 export const getListAll = async () => {
   let query = `SELECT * FROM playlists WHERE userid=?`;

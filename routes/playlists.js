@@ -61,6 +61,17 @@ router.get("/:id/content", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
+//get one by id
+router.get("/:id", async (req, res, next) => {
+  try {
+    let list = await pl.getOneById(req.params.id);
+    res
+      .status(!list ? 400 : 200)
+      .json(!list ? { error: "playlist not found" } : { data: list });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 //create users playlist
 router.post("/", async (req, res, next) => {
   try {
