@@ -141,14 +141,14 @@ router.post("/copy", async (req, res, next) => {
     }
 
     //create collection
-    let resp = await col.createCollection({
+    let newCol = await col.createCollection({
       name: collectionFrom[0].name,
       categoryid: catid ? catid.id : null,
       note: collectionFrom[0].note,
     });
 
-    if (!resp || resp.error) {
-      res.status(400).json({ error: resp ? resp.error : "error" });
+    if (!newCol || newCol.error) {
+      res.status(400).json({ error: newCol ? newCol.error : "error" });
       return;
     }
 
@@ -161,10 +161,11 @@ router.post("/copy", async (req, res, next) => {
     }
     let err = false;
 
-    list.forEach(async (element, i) => {
+    // list.forEach(async (element, i) => {
+    for (const item of list) {
       let result = await common.createCollectionContent(
-        element,
-        resp.id,
+        item,
+        newCol.id,
         fromUser
       );
       if (result.error) {
@@ -172,7 +173,7 @@ router.post("/copy", async (req, res, next) => {
         res.status(400).json({ error: result.error });
         return;
       }
-    });
+    }
     if (!err)
       res
         .status(200)
