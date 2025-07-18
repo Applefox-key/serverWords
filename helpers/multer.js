@@ -2,7 +2,6 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { User } from "../classes/User.js";
-import { log } from "console";
 
 export const checkIsFolderExist = (foldArr) => {
   let mainPath = ["./"];

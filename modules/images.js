@@ -88,7 +88,7 @@ export const copyImg = async (set, fromUser, collToId) => {
           if (err) throw err;
           console.log("file was copied to destination");
         });
-        resultA = pathTo;
+        resultA = filename;
       }
     if (set.imgQ)
       if (set.imgQ !== "" && set.imgQ !== "null") {
@@ -99,7 +99,7 @@ export const copyImg = async (set, fromUser, collToId) => {
           if (err) throw err;
           console.log("file was copied to destination");
         });
-        resultQ = pathTo;
+        resultQ = filename;
       }
   } catch (error) {
     console.error(error);
