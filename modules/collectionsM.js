@@ -40,6 +40,7 @@ export const getAll = async () => {
     LEFT JOIN categories  
     ON collections.categoryid = categories.id
     WHERE collections.userid = ${userid}
+    ORDER BY collections.name COLLATE NOCASE ASC
     `
   );
   return !rows ? [] : rows;

@@ -86,7 +86,7 @@ export const getAllWithContent = async (select = "") => {
        LEFT JOIN  categories  
        ON collections.categoryid = categories.id
        WHERE collections.userid = ? ${queryPart}
-       ORDER BY collections.categoryid ASC, collections.name ASC, content.question ASC;`,
+       ORDER BY categories.name COLLATE NOCASE ASC, collections.name ASC, content.question ASC;`,
     [userid]
   );
 
