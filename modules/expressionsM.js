@@ -36,7 +36,51 @@ export const getList = async (filter = "", labelid = "", stage = "") => {
   if (!rows) return [];
   return rows;
 };
+export const getListByFolders = async (
+  filter = "",
+  labelid = "",
+  stage = ""
+) => {
+  const userid = User.getInstance().user.id;
 
+  const label_Part = !labelid
+    ? ""
+    : labelid !== "null"
+    ? ` AND expressions.labelid = ${labelid} `
+    : ` AND (expressions.labelid IS NULL OR expressions.labelid = "") `;
+
+  const stage_Part = stage === "" ? "" : ` AND expressions.stage = ${stage} `;
+
+  const rows = await db_all(
+    `SELECT expressions.*, labels.name AS label
+     FROM expressions
+     LEFT JOIN labels ON expressions.labelid = labels.id
+     WHERE expressions.userid = ?` +
+      (filter ? ` AND expressions.phrase LIKE ? ` : "") +
+      label_Part +
+      stage_Part +
+      ` ORDER BY label COLLATE NOCASE ASC, expressions.id DESC`,
+    filter ? [userid, filter] : [userid]
+  );
+
+  if (!rows) return [];
+
+  const grouped = new Map();
+
+  for (const row of rows) {
+    const key = row.labelid ?? "null";
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        labelid: row.labelid,
+        labelname: row.label || "No Label",
+        items: [],
+      });
+    }
+    grouped.get(key).items.push({ ...row });
+  }
+
+  return [...grouped.values()];
+};
 export const getListPage = async (
   limit,
   offset,

@@ -86,6 +86,20 @@ router.get("/", async (req, res, next) => {
     res.status(400).json({ error: error.message });
   }
 });
+//user's list by folders
+router.get("/byfolders", async (req, res, next) => {
+  const filter = req.query.filter ? `%${req.query.filter}%` : "";
+  const labelid = req.query.labelid ? req.query.labelid : "";
+  const stage = req.query.hasOwnProperty("stage") ? req.query.stage : "";
+  try {
+    let list = await exp.getListByFolders(filter, labelid, stage);
+    res
+      .status(!list ? 400 : 200)
+      .json(!list ? { error: "session not found" } : { data: list });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 //UPDATE expression arr labeles
 router.patch("/labels", async (req, res, next) => {
   try {
