@@ -1,25 +1,27 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
 import md5 from "md5";
-import { User } from "../classes/User.js";
 import { moveImgToNewCollection, saveImg } from "./images.js";
 
 //get users one content item by id
 export const getOneContentItem = async (id) => {
-  // const userid = User.getInstance().user.id;
   const row = await db_get("SELECT * FROM content WHERE id = ? ", [id]);
   if (!row) return {};
   return row;
 };
 //get users one content item by id
 export const getOnePbContentItem = async (id) => {
-  // const userid = User.getInstance().user.id;
   const row = await db_get("SELECT * FROM content WHERE id = ? ", [id]);
 
   if (!row) return {};
   return row;
 };
-export const editContent = async (set, imges) => {
-  let [imageQUrl, imageAUrl] = await saveImg(set, imges, set.collectionid);
+export const editContent = async (user, set, imges) => {
+  let [imageQUrl, imageAUrl] = await saveImg(
+    user,
+    set,
+    imges,
+    set.collectionid
+  );
 
   return await db_run(
     `UPDATE content set
@@ -39,10 +41,11 @@ export const deleteItem = async (id) => {
 };
 
 export const moveContentToNewCollection = async (
+  user,
   contentIds,
   newCollectionId
 ) => {
-  const userId = User.getInstance().user.id;
+  const userId = user.id;
 
   for (const contentId of contentIds) {
     const contentItem = await getOneContentItem(contentId);

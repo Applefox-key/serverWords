@@ -9,6 +9,12 @@ import {
 import express from "express";
 import bodyParser from "body-parser";
 import md5 from "md5";
+import {
+  sendError,
+  sendOk,
+  sendResponse,
+  sendResultPayload,
+} from "../helpers/responseHelpers.js";
 const router = express.Router();
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -21,43 +27,38 @@ router.post("/", async (req, res, next) => {
     : "http://phrases.learnapp.me/resetpassword/";
   try {
     let result = await resetQuery(req.body.data.email, page);
-    res
-      .status(result.error ? 400 : 200)
-      .json(
-        result.error ? { error: result.error } : { resetToken: result.token }
-      );
+    sendResultPayload(res, result, { resetToken: result?.token });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //request for token validation
 router.get("/", async (req, res, next) => {
   try {
     let validToken = await resetTokenValidation(req.query.resetToken);
-    if (validToken.error) res.status(400).json({ error: error.message });
-    else res.status(200).json({ data: validToken });
+
+    if (validToken.error) sendError(res, error.message);
+    else sendResponse(res, validToken);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //all token validation
 router.get("/all", async (req, res, next) => {
   try {
     let result = await getAllResetTokens();
-
-    res.status(200).json({ data: result });
+    sendResponse(res, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //DELETE ALL unvalid
 router.delete("/", async (req, res, next) => {
   try {
     await deleteAllUnvalid();
-
-    res.status(200).json({ message: "success" });
+    sendOk(res, "success");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 // Delete  collection with content by id
@@ -69,7 +70,7 @@ router.delete("/:resetToken", async (req, res, next) => {
       .status(result.error ? 400 : 200)
       .json(result.error ? { error: result.error } : { message: "success" });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 // //UPDATE password BY reset token
@@ -77,7 +78,7 @@ router.patch("/", async (req, res, next) => {
   try {
     let validToken = await resetTokenValidation(req.body.data.resetToken);
     if (validToken.error) {
-      res.status(400).json({ error: validToken.error });
+      sendError(res, validToken.error);
       await deleteResetToken();
       return;
     }
@@ -92,7 +93,7 @@ router.patch("/", async (req, res, next) => {
       .status(result.error ? 400 : 200)
       .json(result.error ? { error: result.error } : { message: "success" });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 

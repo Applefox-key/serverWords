@@ -3,8 +3,8 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
 import md5 from "md5";
 import * as dotenv from "dotenv";
-import { User } from "../classes/User.js";
 import { saveImgAvatar } from "./avatars.js";
+import { sendError } from "../helpers/responseHelpers.js";
 dotenv.config();
 
 export const getAllUsers = async () => {
@@ -13,7 +13,7 @@ export const getAllUsers = async () => {
     if (res) return res;
     return "";
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 };
 export const getUserByEmail = async (email) => {
@@ -22,7 +22,7 @@ export const getUserByEmail = async (email) => {
     if (res) return res;
     return "";
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 };
 export const getUserById = async (id) => {
@@ -31,7 +31,7 @@ export const getUserById = async (id) => {
     if (res) return res;
     return "";
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 };
 export const getUserByToken = async (token) => {
@@ -62,7 +62,7 @@ export const createToken = async (userid) => {
 
     return res.error ? { error: err } : token;
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 };
 export const login = async (email, password) => {
@@ -76,7 +76,7 @@ export const login = async (email, password) => {
     if (token.error) return { error: token.error };
     return { token: token, role: user.role };
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 };
 
@@ -84,12 +84,17 @@ export const logout = async (token) => {
   try {
     return await db_run(`DELETE FROM sessions WHERE token = ?`, [token]);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 };
-export const updateUser = async (userid, set, img) => {
+export const updateUser = async (user, userid, set, img) => {
   try {
-    let imageUrl = saveImgAvatar(set, img);
+    let imageUrl = img !== undefined ? saveImgAvatar(user, set, img) : null;
+
+    const settingsValue =
+      typeof set.settings === "string"
+        ? set.settings
+        : JSON.stringify(set.settings);
 
     return await db_run(
       `UPDATE users set 
@@ -99,17 +104,10 @@ export const updateUser = async (userid, set, img) => {
              img = COALESCE(?,img),
              settings = COALESCE(?,settings)
              WHERE id = ?`,
-      [
-        set.name,
-        set.email,
-        set.password,
-        imageUrl,
-        JSON.stringify(set.settings),
-        userid,
-      ]
+      [set.name, set.email, set.password, imageUrl, settingsValue, userid]
     );
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 };
 export const createUser = async (set) => {
@@ -133,15 +131,25 @@ export const createUser = async (set) => {
       ]
     );
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 };
-export const deleteUser = async () => {
+export const deleteUser = async (user) => {
   try {
-    const userid = User.getInstance().user.id;
+    const userid = user.id;
 
     return await db_run(`DELETE FROM users WHERE id = ?`, [userid]);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
+};
+export const updateUserField = async (userid, field, value) => {
+  if (
+    !["name", "email", "password", "img", "settings", "role"].includes(field)
+  ) {
+    throw new Error("Invalid field for update");
+  }
+
+  const sql = `UPDATE users SET ${field} = ? WHERE id = ?`;
+  return await db_run(sql, [value, userid]);
 };

@@ -2,7 +2,12 @@ import * as categ from "../modules/categoriesM.js";
 import * as common from "../modules/commonM.js";
 import express from "express";
 import bodyParser from "body-parser";
-import { User } from "../classes/User.js";
+import { formatCollectionContent } from "../helpers/collectionsService.js";
+import {
+  sendError,
+  sendResponse,
+  sendResult,
+} from "../helpers/responseHelpers.js";
 
 const router = express.Router();
 const app = express();
@@ -12,92 +17,76 @@ app.use(bodyParser.json());
 //all by admin token
 router.get("/public/all", async (req, res, next) => {
   try {
-    let user = User.getInstance().user;
+    let user = req.user;
     if (user.role !== "admin") {
-      res.status(400).json({ error: "access denied" });
+      sendError(res, "access denied");
     }
     let list = await categ.getAllCategories(true);
     res
       .status(!list ? 400 : 200)
       .json(!list ? { error: "categiries not found" } : { data: list });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //all by admin token
 router.get("/users/all", async (req, res, next) => {
   try {
-    let user = User.getInstance().user;
+    let user = req.user;
     if (user.role !== "admin") {
-      res.status(400).json({ error: "access denied" });
+      sendError(res, "access denied");
     }
     let list = await categ.getAllCategories();
-    res
-      .status(!list ? 400 : 200)
-      .json(!list ? { error: "session not found" } : { data: list });
+    sendResponse(res, list, "session not found");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //get all
 router.get("/user", async (req, res, next) => {
   try {
-    let list = await categ.getCategoryAll();
-    res
-      .status(!list ? 400 : 200)
-      .json(!list ? { error: "categories not found" } : { data: list });
+    let list = await categ.getCategoryAll(req.user);
+    sendResponse(res, list, "categories not found");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
 //get all with collections
 router.get("/user/collections", async (req, res, next) => {
   try {
-    let list = await categ.getCategoryWithCollections();
+    let list = await categ.getCategoryWithCollections(req.user);
     let resArr = categ.formatCategoriesCollection(list);
-    res
-      .status(!resArr ? 400 : 200)
-      .json(!resArr ? { error: "categories not found" } : { data: resArr });
+    sendResponse(res, resArr, "categories not found");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 }); //get all with collections
 router.get("/public/collections", async (req, res, next) => {
   try {
-    let list = await categ.getCategoryWithCollections(true);
+    let list = await categ.getCategoryWithCollections(req.user, true);
     let resArr = categ.formatCategoriesCollection(list, true);
-    res
-      .status(!resArr ? 400 : 200)
-      .json(!resArr ? { error: "categories not found" } : { data: resArr });
+    sendResponse(res, resArr, "categories not found");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //create users category
 router.post("/user", async (req, res, next) => {
   try {
-    let result = await categ.createUserCategory(req.body.data.name);
-    res
-      .status(result.error ? 400 : 200)
-      .json(
-        result.error
-          ? { error: result.error }
-          : { message: "success", id: result.id }
-      );
+    let result = await categ.createUserCategory(req.user, req.body.data.name);
+    sendResult(res, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //get all
 router.get("/public", async (req, res, next) => {
   try {
     let list = await categ.getPubCategoryAll();
-    res
-      .status(!list ? 400 : 200)
-      .json(!list ? { error: "categories not found" } : { data: list });
+    sendResponse(res, list, "categories not found");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
@@ -105,26 +94,25 @@ router.get("/public", async (req, res, next) => {
 router.get("/:id/collections", async (req, res, next) => {
   try {
     let result = await common.getAllWithContentByCategory(req.params.id);
-    if (!result) {
-      res.status(400).json({ error: "bad request" });
-      return;
-    }
-    let resArr = common.formatCollectionContent(result);
-    res.status(200).json({ data: resArr });
+    if (!result) return sendError(res, "bad request");
+
+    let resArr = formatCollectionContent(req.user, result);
+    sendResponse(res, resArr);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //update users category
 router.patch("/:id", async (req, res, next) => {
   try {
-    let result = await categ.editCategory(req.body.data.name, req.params.id);
-
-    res
-      .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
+    let result = await categ.editCategory(
+      req.user,
+      req.body.data.name,
+      req.params.id
+    );
+    sendResult(res, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 // delete  category by id
@@ -135,31 +123,16 @@ router.delete("/:id", async (req, res, next) => {
       .status(result.error ? 400 : 200)
       .json(result.error ? { error: result.error } : { message: "success" });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 // delete categories by user id
 router.delete("/", async (req, res, next) => {
   try {
-    let result = await categ.deleteUsersAllCategory();
-    res
-      .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
+    let result = await categ.deleteUsersAllCategory(req.user);
+    sendResult(res, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 export default router;
-
-// //create public category
-// router.post("/public", async (req, res, next) => {
-//   try {
-//     let result = await categ.createPbCategory(req.body.data.name);
-
-//     res
-//       .status(result.error ? 400 : 200)
-//       .json(result.error ? { error: result.error } : { message: "success" });
-//   } catch (error) {
-//     res.status(400).json({ error: error.message });
-//   }
-// });

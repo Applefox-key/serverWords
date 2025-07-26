@@ -1,12 +1,12 @@
 import * as exp from "../modules/expressionsM.js";
-import * as usr from "../modules/usersM.js";
-import * as validator from "../helpers/validator.js";
 import express from "express";
-import db from "../database.js";
 import bodyParser from "body-parser";
-import md5 from "md5";
-import { User } from "../classes/User.js";
-
+import {
+  sendError,
+  sendOk,
+  sendResponse,
+  sendResult,
+} from "../helpers/responseHelpers.js";
 const router = express.Router();
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -20,113 +20,145 @@ router.patch("/", async (req, res, next) => {
       .status(result.error ? 400 : 200)
       .json(result.error ? { error: result.error } : { message: "success" });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
 //create new one/list by token
 router.post("/", async (req, res, next) => {
   try {
-    if (!req.body.data.hasOwnProperty("list")) {
-      res.status(400).json({ error: "datas should has property LIST" });
-      return;
+    if (!req.body.data || !req.body.data.hasOwnProperty("list")) {
+      return sendError(res, "data should have property LIST");
     }
     if (!Array.isArray(req.body.data.list)) {
-      res.status(400).json({ error: "datas type is not ARRAY" });
-      return;
+      sendError(res, "data.list is not an ARRAY");
     }
-    let err = false;
-    req.body.data.list.forEach(async (element, i) => {
-      let result = await exp.createExpression({ ...element });
+
+    for (const element of req.body.data.list) {
+      const result = await exp.createExpression(req.user, { ...element });
       if (result.error) {
-        res.status(400).json({ error: result.error });
-        err = true;
-        return;
+        sendError(res, result.error);
       }
-    });
-    if (!err) res.status(200).json({ message: "success" });
+    }
+    sendOk(res, "success");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
-//all by userid
+
 router.delete("/", async (req, res, next) => {
   try {
-    let result = await exp.deleteAllExpressions();
-    res
-      .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
+    let result = await exp.deleteAllExpressions(req.user);
+    sendResult(req, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //all by userid and ids array
 router.delete("/some", async (req, res, next) => {
   try {
     let list = req.body.data.list;
-    let result = await exp.deleteSomeExpressions(list);
-    res
-      .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
+    let result = await exp.deleteSomeExpressions(req.user, list);
+    sendResult(req, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //user's list
 router.get("/", async (req, res, next) => {
   const filter = req.query.filter ? `%${req.query.filter}%` : "";
   const labelid = req.query.labelid ? req.query.labelid : "";
-  const stage = req.query.hasOwnProperty("stage") ? req.query.stage : "";
+  const stage = req.query.stage || "";
+  const status = req.query.status || "";
+
+  const inQueue =
+    req.query.inQueue === "true"
+      ? true
+      : req.query.inQueue === "false"
+      ? false
+      : "";
+
   try {
-    let list = await exp.getList(filter, labelid, stage);
-    res
-      .status(!list ? 400 : 200)
-      .json(!list ? { error: "session not found" } : { data: list });
+    let list = await exp.getList(
+      req.user,
+      filter,
+      labelid,
+      stage,
+      status,
+      inQueue
+    );
+
+    sendResponse(res, list, "session not found");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //user's list by folders
 router.get("/byfolders", async (req, res, next) => {
   const filter = req.query.filter ? `%${req.query.filter}%` : "";
-  const labelid = req.query.labelid ? req.query.labelid : "";
+  const labelid = req.query.labelid || "";
   const stage = req.query.hasOwnProperty("stage") ? req.query.stage : "";
+  const inQueue =
+    req.query.inQueue === "true"
+      ? true
+      : req.query.inQueue === "false"
+      ? false
+      : "";
+  const status = req.query.status || "";
+
   try {
-    let list = await exp.getListByFolders(filter, labelid, stage);
-    res
-      .status(!list ? 400 : 200)
-      .json(!list ? { error: "session not found" } : { data: list });
+    let list = await exp.getListByFolders(
+      req.user,
+      filter,
+      labelid,
+      stage,
+      status,
+      inQueue
+    );
+    sendResponse(res, list, "session not found");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
-//UPDATE expression arr labeles
-router.patch("/labels", async (req, res, next) => {
+
+router.patch("/onefield", async (req, res, next) => {
   try {
-    //create content
-    let list = req.body.data.list;
-    let labelid = req.body.data.labelid;
-    if (!Array.isArray(list)) {
-      res.status(400).json({ error: "expressions is not an Array" });
-      return;
+    const { list, field, fieldValue } = req.body.data;
+
+    if (!Array.isArray(list))
+      return sendError(res, "expressions is not an Array");
+
+    //
+    const results = await Promise.all(
+      list.map((id) => exp.updateExpression({ id, [field]: fieldValue }))
+    );
+
+    const failed = results.find((r) => r?.error);
+    if (failed) return sendError(res, failed.error);
+
+    return sendOk(res, "success");
+  } catch (error) {
+    return sendError(res, error.message);
+  }
+});
+
+//UPDATE expression arr
+router.patch("/batch", async (req, res) => {
+  try {
+    const dataList = req.body.data;
+    if (!Array.isArray(dataList)) {
+      sendError(res, "data must be an array");
     }
-    let err = false;
 
-    list.forEach(async (element, i) => {
-      //  let result = await common.createCollectionContent(element, resp.id);
-      let result = await exp.updateExpressionLabel(element, labelid);
-      if (result.error) {
-        err = true;
-        res.status(400).json({ error: result.error });
-        return;
-      }
-    });
-    if (!err) res.status(200).json({ message: "success" });
+    for (const item of dataList) {
+      const result = await exp.updateExpression(item);
+      if (result?.error) return sendError(res, result.error);
+    }
+    sendOk(res, "success");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
-
 //user's list with pagination
 router.get("/page/:page", async (req, res, next) => {
   const page = req.query.page;
@@ -136,56 +168,53 @@ router.get("/page/:page", async (req, res, next) => {
   const stage = req.query.hasOwnProperty("stage") ? req.query.stage : "";
   try {
     let list = await exp.getListPage(
+      req.user,
       limit,
       (page - 1) * limit,
       filter,
       labelid,
       stage
     );
-    res
-      .status(!list ? 400 : 200)
-      .json(!list ? { error: "session not found" } : { data: list });
+    sendResponse(res, list, "session not found");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //unread list by token
 router.get("/unread", async (req, res, next) => {
   const labelid = req.query.labelid ? req.query.labelid : "";
   try {
-    let list = await exp.getUnreadListByToken(req.query.offset_ms, labelid);
-    res
-      .status(!list ? 400 : 200)
-      .json(!list ? { error: "session not found" } : { data: list });
+    let list = await exp.getUnreadListByToken(
+      req.user,
+      req.query.offset_ms,
+      labelid
+    );
+    sendResponse(res, list, "session not found");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
 //all by admin token
 router.get("/all", async (req, res, next) => {
   try {
-    let user = User.getInstance().user;
+    let user = req.user;
     if (user.role !== "admin") {
-      res.status(400).json({ error: "access denied" });
+      sendError(res, "access denied");
     }
     let list = await exp.getAllUsersExpressions();
-    res
-      .status(!list ? 400 : 200)
-      .json(!list ? { error: "session not found" } : { data: list });
+    sendResponse(res, list, "session not found");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //delete one/all by id
 router.delete("/:id", async (req, res, next) => {
   try {
-    let result = await exp.deleteExpression(req.params.id);
-    res
-      .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
+    let result = await exp.deleteExpression(req.user, req.params.id);
+    sendResult(res, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 export default router;

@@ -112,7 +112,8 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
           userid integer,
           categoryid integer,    
           labelid integer,       
-          note text,
+          note text, 
+          inQueue INTEGER DEFAULT 0,
           FOREIGN KEY(categoryid) REFERENCES categories(id)
           ON DELETE SET NULL ON UPDATE NO ACTION,
           FOREIGN KEY(labelid) REFERENCES labels(id) 
@@ -153,17 +154,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         ON DELETE CASCADE ON UPDATE NO ACTION)`,
         (err) => {}
       );
-      // db.run(`ALTER TABLE content ADD COLUMN rate INTEGER DEFAULT 0`, (err) => {
-      //   if (err) {
-      //     if (err.message.includes("duplicate column name")) {
-      //       console.log(" 'rate' is already exist");
-      //     } else {
-      //       console.error("error adding 'rate':", err.message);
-      //     }
-      //   } else {
-      //     console.log("'rate' has been added");
-      //   }
-      // });
+
       //results
 
       db.run(
@@ -200,6 +191,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         (err) => {}
       );
     });
+
     //----------------------------------------------------------------------------
   }
 });

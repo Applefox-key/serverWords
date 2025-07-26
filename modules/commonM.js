@@ -1,49 +1,8 @@
 import { db_run, db_all } from "../helpers/dbAsync.js";
-import { User } from "../classes/User.js";
 import { saveImg } from "./images.js";
-
-export const formatCollectionContent = (data, addIsMy = false) => {
-  if (data == []) return [];
-  const userid = User.getInstance().user.id;
-  const map = new Map();
-  data.forEach((el) => {
-    if (!map.has(el.id))
-      map.set(el.id, {
-        collection: {
-          id: el.id,
-          name: el.name,
-          note: el.note,
-          categoryid: el.categoryid,
-          category: el.category,
-          isPublic: el.isPublic,
-          isFavorite: el.isFavorite,
-        },
-        content: [],
-      });
-    if (el.id_cont) {
-      let val = map.get(el.id);
-      val.content.push({
-        id: el.id_cont,
-        question: el.question,
-        answer: el.answer,
-        note: el.note_cont,
-        imgA: el.imgA,
-        imgQ: el.imgQ,
-        collectionid: el.id,
-        ...(el.rate !== undefined ? { rate: el.rate } : {}),
-      });
-      if (addIsMy) val.isMy = userid === el.userid;
-      map.set(el.id, val);
-    }
-  });
-
-  return [...map.values()];
-};
 
 //get one collections with content ADMIN
 export const getOneWithContentAdmin = async (id) => {
-  // const userid = User.getInstance().user.id;
-
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name,categoryid,
           categories.name AS category, 
@@ -60,8 +19,8 @@ export const getOneWithContentAdmin = async (id) => {
   return !rows ? [] : rows;
 };
 //get users all collections with content
-export const getAllWithContent = async (select = "") => {
-  const userid = User.getInstance().user.id;
+export const getAllWithContent = async (user, select = "") => {
+  const userid = user.id;
   let queryPart = "";
   if (select) {
     if (select.categoryid)
@@ -108,8 +67,8 @@ export const getAllWithContentByCategory = async (catid) => {
   return !rows ? [] : rows;
 };
 //get users one collections with content
-export const getOneWithContent = async (id) => {
-  const userid = User.getInstance().user.id;
+export const getOneWithContent = async (user, id) => {
+  const userid = user.id;
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name,categoryid,
           categories.name AS category, isPublic, isFavorite,
@@ -129,12 +88,13 @@ export const getOneWithContent = async (id) => {
 
 //create content by collection id
 export const createCollectionContent = async (
+  user,
   set,
   id,
   fromUser = "",
   images = ""
 ) => {
-  let [imageQUrl, imageAUrl] = await saveImg(set, images, id, fromUser);
+  let [imageQUrl, imageAUrl] = await saveImg(user, set, images, id, fromUser);
 
   console.log("create content " + set);
   console.log({ ...{ imageQUrl, imageAUrl } });

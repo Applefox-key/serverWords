@@ -61,9 +61,6 @@ export const createResetToken = async (userid) => {
         : //   : crypto.randomUUID();
           Number(new Date()).toString() + userid;
 
-    // let CurrentTime = new Date();
-    // CurrentTime.setMinutes(CurrentTime.getMinutes() + 15);
-    // let expirationDate = CurrentTime.getTime();
     let exdays = 1;
     const d = new Date();
     d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
@@ -76,7 +73,7 @@ export const createResetToken = async (userid) => {
 
     return res.error ? { error: err } : resetToken;
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return { error: error.message };
   }
 };
 //delet reset token
@@ -104,7 +101,7 @@ export const findValidToken = async (userid) => {
     return { error: error.message };
   }
 
-  return res;
+  // return res;
 };
 //mail with reset token
 export const resetQuery = async (email, page) => {
@@ -120,7 +117,7 @@ export const resetQuery = async (email, page) => {
 
     return { token: token, role: user.role };
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return { error: error.message };
   }
 };
 //reset token validation
@@ -159,7 +156,7 @@ export const updateUserPassword = async (userid, password) => {
       [null, null, password, null, userid]
     );
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return { error: error.message };
   }
 };
 
@@ -172,9 +169,9 @@ export const deleteAllUnvalid = async () => {
             WHERE expirationDate < ?`,
       [tm]
     );
-    resetRow.forEach(async (element) => {
+    for (const element of resetRow) {
       await deleteResetToken(element.token);
-    });
+    }
   } catch (error) {
     return { error: error.message };
   }

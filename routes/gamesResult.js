@@ -4,9 +4,9 @@ const router = express.Router();
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-import { User } from "../classes/User.js";
 import db from "../database.js";
 import { db_all, db_run } from "../helpers/dbAsync.js";
+import { sendError } from "../helpers/responseHelpers.js";
 // `CREATE TABLE gamesResult (
 //   id INTEGER PRIMARY KEY AUTOINCREMENT,
 //   contentid INTEGER,
@@ -18,7 +18,7 @@ import { db_all, db_run } from "../helpers/dbAsync.js";
 //   ON DELETE CASCADE ON UPDATE NO ACTION)`,
 const getListByIds = async (listIds) => {
   //`SELECT * FROM gamesResult WHERE userid = ? AND AND id IN (${placeholders})`,
-  const userid = User.getInstance().user.id;
+  const userid = req.user.id;
   // SELECT by ids
   const query = `SELECT * FROM gamesResult WHERE userid = ? AND contentid IN (${listIds})`;
   const params = [userid];
@@ -78,13 +78,13 @@ router.post("/get", async (req, res) => {
       .status(!list ? 400 : 200)
       .json(!list ? { error: "session not found" } : { data: list });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
 router.post("/", async (req, res) => {
   let newProb = JSON.parse(req.body.data.newProb);
-  const userid = User.getInstance().user.id;
+  const userid = req.user.id;
   let errorOccurred = false;
 
   const rowArr = await getListByIds(Object.keys(newProb));
@@ -107,7 +107,12 @@ router.post("/", async (req, res) => {
 
   for (const contid of Object.keys(newProb)) {
     let contentid = contid;
-    let resultNew = await createNew(contentid, newProb[contentid], userid);
+    let resultNew = await createNew(
+      req.user,
+      contentid,
+      newProb[contentid],
+      userid
+    );
     if (resultNew.error) {
       console.error(resultNew.error.message);
       db.run("ROLLBACK");
@@ -115,14 +120,9 @@ router.post("/", async (req, res) => {
       return;
     }
   }
-
   console.log(errorOccurred);
-
   if (errorOccurred) {
-    res.status(400).json({ error: "An error occurred" });
-  } else
-    res
-      .status(200)
-      .json({ message: "Probabilities updated/created successfully" });
+    sendError(res, "An error occurred");
+  } else sendOk(res, "Probabilities updated/created successfully");
 });
 export default router;

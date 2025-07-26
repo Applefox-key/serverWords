@@ -1,7 +1,6 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { User } from "../classes/User.js";
 
 export const checkIsFolderExist = (foldArr) => {
   let mainPath = ["./"];
@@ -14,7 +13,7 @@ export const checkIsFolderExist = (foldArr) => {
 };
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const userId = User.getInstance().user.id;
+    const userId = req.user.id;
     const collectionId = req.body.data.collectionid;
     checkIsFolderExist(["content", userId.toString(), collectionId.toString()]);
     const userFolderPath = path.join(
@@ -36,7 +35,7 @@ const storage = multer.diskStorage({
 
 const storageAVATARS = multer.diskStorage({
   destination: (req, file, cb) => {
-    const userId = User.getInstance().user.id;
+    const userId = req.user.id;
     checkIsFolderExist(["content", userId.toString(), "avatars"]);
     const userFolderPath = path.join(
       "./",

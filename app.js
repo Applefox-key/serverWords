@@ -12,7 +12,8 @@ import labelsRouter from "./routes/labels.js";
 import playlistsRouter from "./routes/playlists.js";
 import gamesResultRouter from "./routes/gamesResult.js";
 import * as usr from "./modules/usersM.js";
-import { User } from "./classes/User.js";
+import { runDailyQueueUpdate } from "./helpers/runDailyQueueUpdate.js";
+import { sendError, sendOk } from "./helpers/responseHelpers.js";
 
 export const app = express();
 // const port = 9002;
@@ -36,10 +37,10 @@ app.use(
 );
 
 app.get("/", (req, res, next) => {
-  res.status(200).json({ message: "Ok" });
+  sendOk(res);
 });
 app.get("/Home", (req, res, next) => {
-  res.status(200).json({ message: "Ok" });
+  sendOk(res);
 });
 app.use("/users", userRouter);
 app.use("/expressions", phraseRouter);
@@ -54,11 +55,12 @@ app.use("/playlists", playlistsRouter);
 app.use("/gamesresult", gamesResultRouter);
 // Default response for any other request
 app.use(function (req, res) {
-  res.status(404).json({ error: "bad request" });
+  sendError(res, "bad request", 404);
 });
 
 export async function autorisation(req, res, next) {
   let token;
+
   if (!req.headers.authorization && !req.query.token) {
     return res
       .status(403)
@@ -69,14 +71,10 @@ export async function autorisation(req, res, next) {
       : req.query.token;
 
   let userRow = await usr.getUserByToken(token);
-  if (!userRow)
-    return res.status(403).json({ error: "User's not found. Please relogin!" });
 
-  let user = User.getInstance();
-
-  user.setToken(token);
-  user.setUser(userRow);
-
+  if (!userRow) return sendError(res, "User's not found. Please relogin!", 403);
+  req.user = userRow;
+  if (req.user && req.user.role !== "admin") await runDailyQueueUpdate(userRow);
   next();
 }
 export function unless(middleware, ...paths) {

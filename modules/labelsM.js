@@ -1,5 +1,4 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
-import { User } from "../classes/User.js";
 
 //all by admin
 export const getAllLabels = async () => {
@@ -8,25 +7,25 @@ export const getAllLabels = async () => {
 };
 
 //get one by name
-export const getLabelByName = async (name) => {
+export const getLabelByName = async (user, name) => {
   let query = `SELECT * FROM labels WHERE name=? AND userid=?`;
   let params = [name];
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   params.push(userid);
 
   return await db_get(query, params);
 };
 //get one by id
-export const getLabelById = async (id) => {
+export const getLabelById = async (user, id) => {
   let query = `SELECT * FROM labels WHERE id=? AND userid=?`;
   let params = [id];
 
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   params.push(userid);
   return await db_get(query, params);
 };
 //get ALL
-export const getLabelsAll = async () => {
+export const getLabelsAll = async (user) => {
   // let query = `SELECT * FROM categories WHERE userid=?`;
 
   let query = `SELECT labels.id AS id, labels.name AS name, labels.userid as userid, COUNT(expressions.id) AS expressions_count
@@ -35,16 +34,16 @@ export const getLabelsAll = async () => {
   ON expressions.labelid = labels.id
    WHERE labels.userid=?  
    GROUP BY labels.id`;
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   let params = [userid];
 
   return await db_all(query, params);
 };
 
 //create (one for user and return new row's id )
-export const createUserLabel = async (name) => {
-  const userid = User.getInstance().user.id;
-  let lab = await getLabelByName(name);
+export const createUserLabel = async (user, name) => {
+  const userid = user.id;
+  let lab = await getLabelByName(user, name);
 
   if (lab)
     return lab
@@ -58,12 +57,12 @@ export const createUserLabel = async (name) => {
 };
 
 //edit label's name
-export const editLabel = async (name, id) => {
-  let lab = await getLabelByName(name);
+export const editLabel = async (user, name, id) => {
+  let lab = await getLabelByName(user, name);
 
   if (lab) return { error: `label with name ${name} is already exist` };
 
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   return await db_run(
     `UPDATE labels set
       name = COALESCE(?,name)
@@ -78,8 +77,8 @@ export const deleteLabel = async (id) => {
 };
 
 //delete users all labels by userid
-export const deleteUsersAllLabels = async () => {
-  const userid = User.getInstance().user.id;
+export const deleteUsersAllLabels = async (user) => {
+  const userid = user.id;
 
   let res = await db_run(`DELETE FROM labels WHERE userid = ${userid}`)
     .then(() => {

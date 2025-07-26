@@ -1,5 +1,5 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
-import { User } from "../classes/User.js";
+
 // playlists
 // id INTEGER PRIMARY KEY AUTOINCREMENT,
 // name text NOT NULL,
@@ -41,52 +41,17 @@ export const getAllAdmin = async () => {
   return await db_get(query);
 };
 
-// //get one by name
-// export const getLabelByName = async (name) => {
-//   let query = `SELECT * FROM labels WHERE name=? AND userid=?`;
-//   let params = [name];
-//   const userid = User.getInstance().user.id;
-//   params.push(userid);
-
-//   return await db_get(query, params);
-// };
 //get one by id
-export const getById = async (id) => {
+export const getById = async (user, id) => {
   let query = `SELECT * FROM playlists WHERE id=? AND userid=?`;
   let params = [id];
 
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   params.push(userid);
   return await db_get(query, params);
 };
-// //get ALL playlist with collections
-// export const getAll = async () => {
-//   const query = `
-//   SELECT playlists.id AS playlist_id, playlists.name AS playlist_name, playlists.userid AS playlist_userid,
-//          IFNULL(JSON_GROUP_ARRAY(JSON_OBJECT('id', collections.id, 'name', collections.name)),'[]') AS collections
-//   FROM playlists
-//   LEFT JOIN collections ON INSTR(',' || playlists.collectionsid || ',', ',' || collections.id || ',') > 0
-//         AND (collections.userid = ? OR collections.ispublic = 1)
-//   WHERE playlists.userid = ?
-//   GROUP BY playlists.id, playlists.name
-//   `;
-//   const userid = User.getInstance().user.id;
-//   let params = [userid, userid];
 
-//   let result = await db_all(query, params);
-//   if (result === []) return [];
-//   const resultArr = result.map((row) => {
-//     const collections = JSON.parse(row.collections);
-//     return {
-//       id: row.playlist_id,
-//       name: row.playlist_name,
-//       collections: collections,
-//     };
-//   });
-
-//   return resultArr;
-// };
-export const getAll = async () => {
+export const getAll = async (user) => {
   const query = `
     SELECT playlists.id AS playlist_id, playlists.name AS playlist_name, playlists.userid AS playlist_userid,
            IFNULL(JSON_GROUP_ARRAY(JSON_OBJECT('id', collections.id, 
@@ -100,7 +65,7 @@ export const getAll = async () => {
     GROUP BY playlists.id, playlists.name
     `;
   // AND (collections.userid = ? OR collections.ispublic = 1)
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   const params = [userid, userid];
 
   const result = await db_all(query, params);
@@ -115,7 +80,7 @@ export const getAll = async () => {
 
   return resultArr;
 };
-export const getOneById = async (id) => {
+export const getOneById = async (user, id) => {
   const query = `
     SELECT playlists.id AS playlist_id, playlists.name AS playlist_name, playlists.userid AS playlist_userid,
            IFNULL(JSON_GROUP_ARRAY(JSON_OBJECT('id', collections.id, 
@@ -128,7 +93,7 @@ export const getOneById = async (id) => {
     WHERE playlists.userid = ? AND playlists.id = ?
     `;
   // AND (collections.userid = ? OR collections.ispublic = 1)
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   const params = [userid, userid, id];
 
   const result = await db_all(query, params);
@@ -144,16 +109,16 @@ export const getOneById = async (id) => {
   return resultArr;
 };
 //get ALL playlists list
-export const getListAll = async () => {
+export const getListAll = async (user) => {
   let query = `SELECT * FROM playlists WHERE userid=?`;
 
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   let params = [userid];
 
   return await db_all(query, params);
 };
 
-export const getContentById = async (id) => {
+export const getContentById = async (user, id) => {
   const query = `
     SELECT c.id, c.question, c.answer, c.note, c.imgA, c.imgQ
     FROM content c
@@ -163,23 +128,16 @@ export const getContentById = async (id) => {
     WHERE p.id = ? AND (col.userid = p.userid OR col.ispublic = 1)
   `;
 
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   let params = [id];
 
   let result = await db_all(query, params);
 
   return result;
 };
-//create (one for user and return new row's id )
-// export const createNew = async (name, collectionsid = null) => {
-//   const userid = User.getInstance().user.id;
-//   return await db_get(
-//     `INSERT INTO playlists (name, userid, collectionsid) VALUES (?,?,?)  RETURNING id`,
-//     [name, userid, collectionsid]
-//   );
-// };
-export const createNew = async (name, collectionIds = null) => {
-  const userId = User.getInstance().user.id;
+
+export const createNew = async (user, name, collectionIds = null) => {
+  const userId = user.id;
 
   // Insert into the playlists table
   const playlistQuery = `
@@ -208,8 +166,8 @@ export const createNew = async (name, collectionIds = null) => {
   return playlistId;
 };
 
-export const edit = async (name, listIds = null, id) => {
-  const userid = User.getInstance().user.id;
+export const edit = async (user, name, listIds = null, id) => {
+  const userid = user.id;
 
   // Update the playlist in the playlists table
   await db_run(

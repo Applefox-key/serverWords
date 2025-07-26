@@ -1,5 +1,5 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
-import { User } from "../classes/User.js";
+import { sendError } from "../helpers/responseHelpers.js";
 import { deleteImgs } from "./images.js";
 
 //all by admin
@@ -9,7 +9,7 @@ export const getAllUsersCollections = async () => {
     if (res) return res;
     return "";
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 };
 //get users one collection by id
@@ -22,17 +22,10 @@ export const getByID_forImg = async (id) => {
     console.log(error.message);
     return "";
   }
-  // // const userid = User.getInstance().user.id;
-  // const row = await db_get(
-  //   `SELECT *
-  //   ON collections.categoryid = categories.id WHERE userid = ? AND id = ? `,
-  //   [userid, id]
-  // );
-  // return !row ? [] : row;
 };
 //get users all collections without content
-export const getAll = async () => {
-  const userid = User.getInstance().user.id;
+export const getAll = async (user) => {
+  const userid = user.id;
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, isFavorite,
     categories.name AS category
@@ -45,8 +38,8 @@ export const getAll = async () => {
   );
   return !rows ? [] : rows;
 };
-export const deleteAll = async () => {
-  const userid = User.getInstance().user.id;
+export const deleteAll = async (user) => {
+  const userid = user.id;
   return await db_all(
     `DELETE 
     FROM collections  
@@ -55,8 +48,8 @@ export const deleteAll = async () => {
   );
 };
 //get users one collection by id
-export const getOne = async (id) => {
-  const userid = User.getInstance().user.id;
+export const getOne = async (user, id) => {
+  const userid = user.id;
   const row = await db_get(
     `SELECT collections.name AS name, note, isPublic, isFavorite, categoryid, categories.name AS category FROM collections
     LEFT JOIN categories 
@@ -66,8 +59,8 @@ export const getOne = async (id) => {
   return !row ? [] : row;
 };
 //create users one collection without content
-export const createCollection = async (set) => {
-  const userid = User.getInstance().user.id;
+export const createCollection = async (user, set) => {
+  const userid = user.id;
   return await db_get(
     `INSERT INTO collections (name, note, userid, categoryid, isPublic, isFavorite) VALUES (?,?,?,?,?,?) RETURNING id`,
     [
@@ -107,8 +100,8 @@ export const editCollection = async (set, id) => {
 };
 
 //switch  collection attribute isPublic
-export const switchIsPublic = async (isPublic, collectionId) => {
-  const userid = User.getInstance().user.id;
+export const switchIsPublic = async (user, isPublic, collectionId) => {
+  const userid = user.id;
   const update_query = `
     UPDATE collections
     SET isPublic = ?

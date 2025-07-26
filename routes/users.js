@@ -1,11 +1,14 @@
 import * as usr from "../modules/usersM.js";
 import * as validator from "../helpers/validator.js";
 import express from "express";
-import db from "../database.js";
 import bodyParser from "body-parser";
 import md5 from "md5";
-import { User } from "../classes/User.js";
 import { uploadUserAvatar } from "../helpers/multer.js";
+import {
+  sendError,
+  sendResponse,
+  sendResult,
+} from "../helpers/responseHelpers.js";
 
 const router = express.Router();
 const app = express();
@@ -16,20 +19,20 @@ app.use(bodyParser.json());
 router.post("/", async (req, res, next) => {
   try {
     if (!req.body.data) {
-      res.status(400).json({ error: "data is missing" });
+      sendError(res, "data is missing");
       return;
     }
     if (!req.body.data.email || !req.body.data.password) {
-      res.status(400).json({ error: "wrong login or password" });
+      sendError(res, "wrong login or password");
       return;
     }
     let emailValid = validator.emaileValidation(req.body.data.email);
     if (emailValid.error) {
-      res.status(400).json({ error: emailValid.error });
+      sendError(res, emailValid.error);
       return;
     }
     if (await usr.getUserByEmail(req.body.data.email)) {
-      res.status(400).json({ error: "user already exists" });
+      sendError(res, "user already exists");
       return;
     }
 
@@ -42,71 +45,60 @@ router.post("/", async (req, res, next) => {
     };
 
     let result = await usr.createUser(data);
-
-    if (result.error) {
-      res.status(400).json({ error: result.error });
-      return;
-    }
-    res.status(200).json({ message: "success" });
+    sendResult(res, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
 //delete user
 router.delete("/", async (req, res, next) => {
   try {
-    const token = User.getInstance().token;
-
-    let result = await usr.deleteUser();
-    res
-      .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
+    let result = await usr.deleteUser(req.user);
+    sendResult(res, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
 //ONE by token
 router.get("/", async (req, res, next) => {
   try {
-    let user = User.getInstance().user;
-    res.status(200).json({ data: user });
+    let user = req.user;
+
+    sendResponse(res, user);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //all by admin token
 router.get("/all", async (req, res, next) => {
   try {
-    let user = User.getInstance().user;
+    let user = req.user;
 
     if (user.role !== "admin") {
-      res.status(400).json({ error: "access denied" });
+      sendError(res, "access denied");
     }
     let list = await usr.getAllUsers();
-
-    res
-      .status(!list ? 400 : 200)
-      .json(!list ? { error: "session not found" } : { data: list });
+    sendResponse(res, list, "session not found");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //login by email without token
 router.post("/login", async (req, res, next) => {
   try {
     if (!req.body.data.email) {
-      res.status(400).json({ error: "no login" });
+      sendError(res, "no login");
       return;
     }
     if (!req.body.data.password) {
-      res.status(400).json({ error: "no password" });
+      sendError(res, "no password");
       return;
     }
     let emailValid = validator.emaileValidation(req.body.data.email);
     if (emailValid.error) {
-      res.status(400).json({ error: emailValid.error });
+      sendError(res, emailValid.error);
       return;
     }
 
@@ -120,56 +112,59 @@ router.post("/login", async (req, res, next) => {
           : { token: result.token, role: result.role }
       );
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
 //logout by token
 router.delete("/logout", async (req, res, next) => {
   try {
-    const token = User.getInstance().token;
+    const token = req.token;
     if (!token) {
-      res.status(400).json({ error: "session is not found" });
-      return;
+      return sendError(res, "session is not found");
     }
     const result = await usr.logout(token);
-    res
-      .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
+
+    sendResult(res, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
 //UPDATE BY token
 router.patch("/", uploadUserAvatar.single("file"), async (req, res, next) => {
-  let userD = { ...req.body.data };
   // , req.files
 
   try {
-    const userid = User.getInstance().user.id;
+    let userD = { ...req.body.data };
+
+    const userid = req.user.id;
+    // const settings =
+    //   typeof userD.settings === "string"
+    //     ? JSON.parse(userD.settings)
+    //     : userD.settings;
     var data = {
       name: userD.name,
       img: userD.img,
       email: userD.email,
       password: userD.password ? md5(req.body.data.password) : null,
-      settings: JSON.parse(userD.settings),
+      settings: userD.settings,
     };
 
-    let result = await usr.updateUser(userid, data, req.file);
+    let result = await usr.updateUser(req.user, userid, data, req.file);
     res
       .status(result.error ? 400 : 200)
       .json(result.error ? { error: result.error } : { message: "success" });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //UPDATE password BY admin token
 router.patch("/password", async (req, res, next) => {
   try {
-    let user = User.getInstance().user;
+    let user = req.user;
     if (user.role !== "admin") {
-      res.status(400).json({ error: "access denied" });
+      sendError(res, "access denied");
     }
     const userid = req.body.data.userid;
     var data = {
@@ -180,12 +175,35 @@ router.patch("/password", async (req, res, next) => {
       settings: req.body.data.settings,
     };
 
-    let result = await usr.updateUser(userid, data);
-    res
-      .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
+    let result = await usr.updateUser(user, userid, data);
+
+    sendResult(res, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
+  }
+});
+//UPDATE user BY admin token
+router.patch("/byadmin", async (req, res, next) => {
+  try {
+    let user = req.user;
+    if (user.role !== "admin") {
+      sendError(res, "access denied");
+    }
+    const userid = req.body.data.userid;
+    var data = {
+      name: req.body.data.name,
+      img: req.body.data.img,
+      email: req.body.data.email,
+      password: req.body.data.password ? md5(req.body.data.password) : null,
+      settings: JSON.parse(req.body.data.settings),
+    };
+
+    console.log(`by admin user ${userid}`);
+
+    let result = await usr.updateUser(user, userid, data);
+    sendResult(res, result);
+  } catch (error) {
+    sendError(res, error.message);
   }
 });
 // module.exports = router;

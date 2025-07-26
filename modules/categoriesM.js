@@ -1,5 +1,4 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
-import { User } from "../classes/User.js";
 export const formatCategoriesCollection = (result, pub = false) => {
   if (result == []) return [];
 
@@ -56,33 +55,33 @@ export const getAllCategories = async (isPublic = false) => {
 };
 
 //get one by name
-export const getCategoryByName = async (name, isPublic = false) => {
+export const getCategoryByName = async (user, name, isPublic = false) => {
   let query = isPublic
     ? `SELECT * FROM categories WHERE name=? AND userid is NULL`
     : `SELECT * FROM categories WHERE name=? AND userid=?`;
   let params = [name];
 
   if (!isPublic) {
-    const userid = User.getInstance().user.id;
+    const userid = user.id;
     params.push(userid);
   }
   return await db_get(query, params);
 };
 //get one by id
-export const getCategoryById = async (id, isPublic = false) => {
+export const getCategoryById = async (user, id, isPublic = false) => {
   let query = isPublic
     ? `SELECT * FROM categories WHERE id=? AND userid is NULL`
     : `SELECT * FROM categories WHERE id=? AND userid=?`;
   let params = [id];
 
   if (!isPublic) {
-    const userid = User.getInstance().user.id;
+    const userid = user.id;
     params.push(userid);
   }
   return await db_get(query, params);
 };
 //get ALL
-export const getCategoryAll = async () => {
+export const getCategoryAll = async (user) => {
   // let query = `SELECT * FROM categories WHERE userid=?`;
 
   let query = `SELECT categories.id, categories.name AS name, categories.userid as userid, COUNT(collections.id) AS collection_count
@@ -91,7 +90,7 @@ export const getCategoryAll = async () => {
   ON collections.categoryid = categories.id
    WHERE categories.userid=?  
    GROUP BY categories.id`;
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   let params = [userid];
 
   return await db_all(query, params);
@@ -125,11 +124,11 @@ export const getPubCategoryAll = async (isPublic = false) => {
   return uniqueCategories;
 };
 //get ALL with collections list
-export const getCategoryWithCollections = async (isPublic = false) => {
+export const getCategoryWithCollections = async (user, isPublic = false) => {
   // let query = `SELECT * FROM categories WHERE userid=?`;
   let queryPart = "";
   let queryPart0 = "";
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   if (isPublic) {
     queryPart += ` WHERE collections.isPublic=${true}`;
     queryPart0 += `, CASE WHEN collections.userid = ${userid} THEN 1 ELSE 0 END AS isMy`;
@@ -147,9 +146,9 @@ export const getCategoryWithCollections = async (isPublic = false) => {
   return await db_all(query, params);
 };
 //create (one for user and return new row's id )or (create one for public and return new row's id)
-export const createUserCategory = async (name) => {
-  const userid = User.getInstance().user.id;
-  let categ = await getCategoryByName(name);
+export const createUserCategory = async (user, name) => {
+  const userid = user.id;
+  let categ = await getCategoryByName(user, name);
 
   if (categ)
     return categ
@@ -178,8 +177,8 @@ export const createUserCategory = async (name) => {
 // };
 
 //edit category's name
-export const editCategory = async (name, id, isPublic = false) => {
-  let categ = await getCategoryByName(name, isPublic);
+export const editCategory = async (user, name, id, isPublic = false) => {
+  let categ = await getCategoryByName(user, name, isPublic);
 
   if (categ && categ.id.toString() === id.toString()) return ""; //nothing have been changed
   if (categ) return { error: `category with name ${name} is already exist` };
@@ -191,7 +190,7 @@ export const editCategory = async (name, id, isPublic = false) => {
       [name]
     );
 
-  const userid = User.getInstance().user.id;
+  const userid = user.id;
   return await db_run(
     `UPDATE categories set
       name = COALESCE(?,name)
@@ -206,8 +205,8 @@ export const deleteCategory = async (id) => {
 };
 
 //delete users one categories by userid
-export const deleteUsersAllCategory = async () => {
-  const userid = User.getInstance().user.id;
+export const deleteUsersAllCategory = async (user) => {
+  const userid = user.id;
 
   let res = await db_run(`DELETE FROM categories WHERE userid = ${userid}`)
     .then(() => {
@@ -223,7 +222,7 @@ export const deleteUsersAllCategory = async () => {
 // export const getPbCategoryFromUser = async (usCatid) => {
 //   if (!usCatid) return null; //no category
 //   //get user category by id
-//   let usCateg = await getCategoryById(usCatid);
+//   let usCateg = await getCategoryById(user,usCatid);
 
 //   if (usCateg.error) return null;
 //   //create pb

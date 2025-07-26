@@ -1,11 +1,10 @@
 import fs from "fs";
 import { getOneWithContent } from "./commonM.js";
-import { User } from "../classes/User.js";
 import { getOneContentItem } from "./contentM.js";
 import { checkIsFolderExist } from "../helpers/multer.js";
 import path from "path";
-export const checkImgAndDelete = async (set) => {
-  const userId = User.getInstance().user.id;
+export const checkImgAndDelete = async (user, set) => {
+  const userId = user.id;
   const res = await getOneContentItem(set.id);
 
   if (!res) return;
@@ -30,8 +29,8 @@ export const checkImgAndDelete = async (set) => {
   }
 };
 
-export const deleteOneImgSet = (set) => {
-  const userId = User.getInstance().user.id;
+export const deleteOneImgSet = (user, set) => {
+  const userId = user.id;
 
   try {
     if (set.imgA)
@@ -50,12 +49,12 @@ export const deleteOneImgSet = (set) => {
     console.error(error);
   }
 };
-export const deleteImgs = async (id) => {
-  const res = await getOneWithContent(id);
+export const deleteImgs = async (user, id) => {
+  const res = await getOneWithContent(user, id);
   if (!res) return;
   try {
-    res.forEach((set) => deleteOneImgSet(set));
-    const userId = User.getInstance().user.id;
+    res.forEach((set) => deleteOneImgSet(req.user, set));
+    const userId = user.id;
     //del collection folder
     const pathUrl = "./content/" + userId + "/" + id;
     fs.rmdir(pathUrl, (err) => console.log(err));
@@ -64,8 +63,8 @@ export const deleteImgs = async (id) => {
   }
 };
 //
-export const copyImg = async (set, fromUser, collToId) => {
-  const userId = User.getInstance().user.id.toString();
+export const copyImg = async (user, set, fromUser, collToId) => {
+  const userId = user.id.toString();
   let resultQ = "";
   let resultA = "";
   if (!set.imgA && !set.imgQ) return [resultQ, resultA];
@@ -107,7 +106,13 @@ export const copyImg = async (set, fromUser, collToId) => {
   return [resultQ, resultA];
 };
 //save images
-export const saveImg = async (set, images, tocollectionId, fromUser = "") => {
+export const saveImg = async (
+  user,
+  set,
+  images,
+  tocollectionId,
+  fromUser = ""
+) => {
   let imageAUrl = set.imgA ? set.imgA : "";
   let imageQUrl = set.imgQ ? set.imgQ : "";
   //no new img files and is no from public return as it is
@@ -115,7 +120,12 @@ export const saveImg = async (set, images, tocollectionId, fromUser = "") => {
 
   if (fromUser) {
     //copy from user public
-    const [imageQUrl, imageAUrl] = await copyImg(set, fromUser, tocollectionId);
+    const [imageQUrl, imageAUrl] = await copyImg(
+      user,
+      set,
+      fromUser,
+      tocollectionId
+    );
 
     return [imageQUrl, imageAUrl];
   } else {

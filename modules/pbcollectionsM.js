@@ -1,10 +1,7 @@
-import { User } from "../classes/User.js";
 import { db_get, db_all } from "../helpers/dbAsync.js";
 
 //get  all collections with content
 export const getAllWithContent = async () => {
-  // const userid = User.getInstance().user.id;
-
   const rows = await db_all(
     `SELECT collections.id, collections.name AS name, collections.note, isPublic, isFavorite, categoryid,  collections.userid,
       categories.name AS category,  
@@ -23,8 +20,6 @@ export const getAllWithContent = async () => {
 };
 //get  all collections with content
 export const getAllWithCount = async () => {
-  // const userid = User.getInstance().user.id;
-
   const rows = await db_all(
     `SELECT collections.id, collections.name AS name, collections.note, isPublic, isFavorite, categoryid, 
       categories.name AS category,  
@@ -63,8 +58,8 @@ export const getOneWithContent = async (id) => {
 };
 
 //get users all public collections (list)
-export const getAll = async () => {
-  const userid = User.getInstance().user.id;
+export const getAll = async (user) => {
+  const userid = user.id;
   const rows = await db_all(`
   SELECT *,
     CASE WHEN userid = ${userid} THEN 1 ELSE 0 END AS isMy

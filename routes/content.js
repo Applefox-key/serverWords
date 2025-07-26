@@ -5,6 +5,13 @@ import bodyParser from "body-parser";
 
 import { upload } from "../helpers/multer.js";
 import { logResult } from "../helpers/resultLog.js";
+import { formatCollectionContent } from "../helpers/collectionsService.js";
+import {
+  sendError,
+  sendOk,
+  sendResponse,
+  sendResult,
+} from "../helpers/responseHelpers.js";
 
 const router = express.Router();
 const app = express();
@@ -14,11 +21,11 @@ app.use(bodyParser.json());
 //Get user's all collections with content
 router.get("/", async (req, res, next) => {
   try {
-    let result = await common.getAllWithContent(req.query);
-    let resArr = common.formatCollectionContent(result);
-    res.status(200).json({ data: resArr });
+    let result = await common.getAllWithContent(req.user, req.query);
+    let resArr = formatCollectionContent(req.user, result);
+    sendResponse(res, resArr);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
@@ -28,13 +35,16 @@ router.patch(
   upload.fields([{ name: "imgAfile" }, { name: "imgQfile" }]),
   async (req, res, next) => {
     try {
-      let result = await con.editContent({ ...req.body.data }, req.files);
+      s;
+      let result = await con.editContent(
+        req.user,
+        { ...req.body.data },
+        req.files
+      );
       logResult(result);
-      res
-        .status(result.error ? 400 : 200)
-        .json(result.error ? { error: result.error } : { message: "success" });
+      sendResult(res, result);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error.message);
     }
   }
 );
@@ -42,16 +52,14 @@ router.post("/move", async (req, res, next) => {
   try {
     const { contentIds, newCollectionId } = req.body.data;
 
-    if (!contentIds || !newCollectionId) {
-      res.status(400).json({ error: "Invalid input data" });
-      return;
-    }
+    if (!contentIds || !newCollectionId)
+      return sendError(res, "Invalid input data");
 
-    await con.moveContentToNewCollection(contentIds, newCollectionId);
+    await con.moveContentToNewCollection(req.user, contentIds, newCollectionId);
 
-    res.status(200).json({ message: "Content moved successfully" });
+    sendOk(res, "Content moved successfully");
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //Get one pub content item  by id
@@ -60,13 +68,12 @@ router.get("/pub/:id", async (req, res, next) => {
     let result = await con.getOnePbContentItem(req.params.id);
 
     if (!result) {
-      res.status(400).json({ error: "bad request" });
+      sendError(res, "bad request");
       return;
     }
-
-    res.status(200).json({ data: result });
+    sendResponse(res, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 //Get one content item  by id
@@ -74,12 +81,12 @@ router.get("/:id", async (req, res, next) => {
   try {
     let result = await con.getOneContentItem(req.params.id);
     if (!result) {
-      res.status(400).json({ error: "bad request" });
+      sendError(res, "bad request");
       return;
     }
-    res.status(200).json({ data: result });
+    sendResponse(res, result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
@@ -91,7 +98,7 @@ router.delete("/:id", async (req, res, next) => {
       .status(result.error ? 400 : 200)
       .json(result.error ? { error: result.error } : { message: "success" });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendError(res, error.message);
   }
 });
 
