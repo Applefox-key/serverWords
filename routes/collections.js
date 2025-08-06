@@ -45,7 +45,7 @@ router.get("/:id/admin", async (req, res, next) => {
       sendError(res, "access denied");
     }
 
-    let list = await common.getOneWithContentAdmin();
+    let list = await common.getOneWithContentAdmin(req.params.id);
     res
       .status(!list ? 400 : 200)
       .json(!list ? { error: "session not found" } : { data: list });

@@ -28,14 +28,25 @@ router.get("/", async (req, res, next) => {
     sendError(res, error.message);
   }
 });
-
+//all by admin token
+router.get("/admin", async (req, res, next) => {
+  try {
+    let user = req.user;
+    if (user.role !== "admin") {
+      sendError(res, "access denied");
+    }
+    let result = await common.getAllWithContentAdmin();
+    sendResponse(res, result, "session not found");
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
 //Edit content by content data with id
 router.patch(
   "/",
   upload.fields([{ name: "imgAfile" }, { name: "imgQfile" }]),
   async (req, res, next) => {
     try {
-      s;
       let result = await con.editContent(
         req.user,
         { ...req.body.data },

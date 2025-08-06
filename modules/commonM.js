@@ -3,6 +3,7 @@ import { saveImg } from "./images.js";
 
 //get one collections with content ADMIN
 export const getOneWithContentAdmin = async (id) => {
+  console.log(id);
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name,categoryid,
           categories.name AS category, 
@@ -15,8 +16,26 @@ export const getOneWithContentAdmin = async (id) => {
     WHERE collections.id = ?`,
     [id]
   );
+  console.log(rows);
 
-  return !rows ? [] : rows;
+  return rows || [];
+};
+
+export const getAllWithContentAdmin = async () => {
+  const rows = await db_all(
+    `SELECT collections.id, collections.note, collections.userid, collections.name AS name,categoryid,
+          categories.name AS category, 
+          question, answer, imgA, imgQ, rate, content.note AS note_cont, content.id AS id_cont 
+    FROM collections  
+    LEFT JOIN  content  
+    ON collections.id = content.collectionid
+    LEFT JOIN  categories  
+    ON collections.categoryid = categories.id
+    `
+  );
+  console.log(rows);
+
+  return rows || [];
 };
 //get users all collections with content
 export const getAllWithContent = async (user, select = "") => {

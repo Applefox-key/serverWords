@@ -3,6 +3,9 @@ import { getOneWithContent } from "./commonM.js";
 import { getOneContentItem } from "./contentM.js";
 import { checkIsFolderExist } from "../helpers/multer.js";
 import path from "path";
+export const isValidImg = (name) => {
+  return typeof name === "string" && name !== "" && name !== "null";
+};
 export const checkImgAndDelete = async (user, set) => {
   const userId = user.id;
   const res = await getOneContentItem(set.id);
@@ -11,14 +14,14 @@ export const checkImgAndDelete = async (user, set) => {
   if (!Object.keys(res).length) return;
   try {
     if (set.imgA)
-      if (set.imgA !== res.imgA && res.imgA !== "") {
+      if (set.imgA !== res.imgA && isValidImg(res.imgA)) {
         const filename = res.imgA;
         const pathUrl =
           "./content/" + userId + "/" + set.collectionid + "/" + filename;
         fs.unlink(pathUrl, (err) => console.log(err));
       }
     if (set.imgQ)
-      if (set.imgQ !== res.imgQ && res.imgQ !== "") {
+      if (set.imgQ !== res.imgQ && isValidImg(res.imgQ)) {
         const filename = res.imgQ;
         const pathUrl =
           "./content/" + userId + "/" + set.collectionid + "/" + filename;
@@ -34,13 +37,13 @@ export const deleteOneImgSet = (user, set) => {
 
   try {
     if (set.imgA)
-      if (set.imgA !== "") {
+      if (isValidImg(set.imgA)) {
         const filename = set.imgA;
         const pathUrl = "./content/" + userId + "/" + set.id + "/" + filename;
         fs.unlink(pathUrl, (err) => console.log(err));
       }
     if (set.imgQ)
-      if (set.imgQ !== "") {
+      if (isValidImg(set.imgQ)) {
         const filename = set.imgQ;
         const pathUrl = "./content/" + userId + "/" + set.id + "/" + filename;
         fs.unlink(pathUrl, (err) => console.log(err));
@@ -67,6 +70,7 @@ export const copyImg = async (user, set, fromUser, collToId) => {
   const userId = user.id.toString();
   let resultQ = "";
   let resultA = "";
+
   if (!set.imgA && !set.imgQ) return [resultQ, resultA];
   const fromFolderPath = path.join(
     "./",
@@ -130,7 +134,7 @@ export const saveImg = async (
     return [imageQUrl, imageAUrl];
   } else {
     //check if img has been changed
-    if (set.id !== "new") checkImgAndDelete(set);
+    if (set.id !== "new") checkImgAndDelete(user, set);
   }
 
   if ("imgAfile" in images) imageAUrl = images.imgAfile[0].filename;
