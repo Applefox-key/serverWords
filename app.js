@@ -9,6 +9,7 @@ import resetpasswordRouter from "./routes/resetpassword.js";
 import categoriesRouter from "./routes/categories.js";
 import imgRouter from "./routes/img.js";
 import labelsRouter from "./routes/labels.js";
+import entriesRouter from "./routes/entries.js";
 import playlistsRouter from "./routes/playlists.js";
 import gamesResultRouter from "./routes/gamesResult.js";
 import * as usr from "./modules/usersM.js";
@@ -32,8 +33,8 @@ app.use(
     "GET/Home",
     "POST/resetpassword",
     "GET/resetpassword",
-    "PATCH/resetpassword"
-  )
+    "PATCH/resetpassword",
+  ),
 );
 
 app.get("/", (req, res, next) => {
@@ -53,6 +54,7 @@ app.use("/img", imgRouter);
 app.use("/labels", labelsRouter);
 app.use("/playlists", playlistsRouter);
 app.use("/gamesresult", gamesResultRouter);
+app.use("/entries", entriesRouter);
 // Default response for any other request
 app.use(function (req, res) {
   sendError(res, "bad request", 404);
@@ -62,13 +64,8 @@ export async function autorisation(req, res, next) {
   let token;
 
   if (!req.headers.authorization && !req.query.token) {
-    return res
-      .status(403)
-      .json({ error: "No credentials sent! Please relogin!" });
-  } else
-    token = req.headers.authorization
-      ? req.headers.authorization.split(" ")[1]
-      : req.query.token;
+    return res.status(403).json({ error: "No credentials sent! Please relogin!" });
+  } else token = req.headers.authorization ? req.headers.authorization.split(" ")[1] : req.query.token;
 
   let userRow = await usr.getUserByToken(token);
 
@@ -80,17 +77,10 @@ export async function autorisation(req, res, next) {
 export function unless(middleware, ...paths) {
   return async function (req, res, next) {
     try {
-      console.log(
-        "___________________________________________________REQUEST " +
-          req.method +
-          req.path
-      );
-      if (req.body.data && Object.keys(req.body.data).length)
-        console.log("________ data", req.body.data);
-      if (req.params && Object.keys(req.params).length)
-        console.log("________ params", req.params);
-      if (req.query && Object.keys(req.query).length)
-        console.log("________ query", req.query);
+      console.log("___________________________________________________REQUEST " + req.method + req.path);
+      if (req.body.data && Object.keys(req.body.data).length) console.log("________ data", req.body.data);
+      if (req.params && Object.keys(req.params).length) console.log("________ params", req.params);
+      if (req.query && Object.keys(req.query).length) console.log("________ query", req.query);
     } catch (error) {}
 
     const pathCheck = paths.some((path) => path === req.method + req.path);

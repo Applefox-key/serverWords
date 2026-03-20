@@ -34,8 +34,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
             // Table already created
           } else {
             //   Table just created, creating some rows
-            let insert =
-              "INSERT INTO users (name, email, password, img, role) VALUES (?,?,?,?,?)";
+            let insert = "INSERT INTO users (name, email, password, img, role) VALUES (?,?,?,?,?)";
             db_run(insert, [
               "test user",
               "test@test.test",
@@ -50,15 +49,9 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
               "https://firebasestorage.googleapis.com/v0/b/words-d2019.appspot.com/o/avatars%2Fav1.png?alt=media&token=d83bc75a-2744-49c2-b961-93c631c4351f",
               "user",
             ]);
-            db_run(insert, [
-              "admin",
-              "admin@admin.admin",
-              md5("admin685032"),
-              "",
-              "admin",
-            ]);
+            db_run(insert, ["admin", "admin@admin.admin", md5("admin685032"), "", "admin"]);
           }
-        }
+        },
       );
       //sessions
       db.run(
@@ -68,7 +61,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
           userid integer,
           FOREIGN KEY(userid) REFERENCES users(id)
           ON DELETE CASCADE  ON UPDATE NO ACTION)`,
-        (err) => {}
+        (err) => {},
       ); //resetToken
       db.run(
         `CREATE TABLE resettoken (
@@ -78,7 +71,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
           expirationDate integer,
           FOREIGN KEY(userid) REFERENCES users(id)
           ON DELETE CASCADE  ON UPDATE NO ACTION)`,
-        (err) => {}
+        (err) => {},
       );
       //categories
       db.run(
@@ -88,7 +81,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
                 userid integer,
                 FOREIGN KEY(userid) REFERENCES users(id)
                 ON DELETE CASCADE  ON UPDATE NO ACTION)`,
-        (err) => {}
+        (err) => {},
       );
       //labels
       db.run(
@@ -98,7 +91,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
                   userid integer,
                   FOREIGN KEY(userid) REFERENCES users(id)
                   ON DELETE CASCADE  ON UPDATE NO ACTION)`,
-        (err) => {}
+        (err) => {},
       );
       //expressions
       db.run(
@@ -120,7 +113,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
           ON DELETE SET NULL ON UPDATE NO ACTION,
           FOREIGN KEY(userid) REFERENCES users(id)
           ON DELETE CASCADE  ON UPDATE NO ACTION)`,
-        (err) => {}
+        (err) => {},
       );
 
       //collections
@@ -137,7 +130,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         ON DELETE SET NULL ON UPDATE NO ACTION,
         FOREIGN KEY(userid) REFERENCES users(id)
         ON DELETE CASCADE ON UPDATE NO ACTION)`,
-        (err) => {}
+        (err) => {},
       );
       //content
       db.run(
@@ -152,7 +145,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         rate integer DEFAULT 0,        
         FOREIGN KEY(collectionid) REFERENCES collections(id)
         ON DELETE CASCADE ON UPDATE NO ACTION)`,
-        (err) => {}
+        (err) => {},
       );
 
       //results
@@ -167,7 +160,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
                   ON DELETE CASCADE ON UPDATE NO ACTION, 
                   FOREIGN KEY(userid) REFERENCES users(id)  
                   ON DELETE CASCADE ON UPDATE NO ACTION)`,
-        (err) => {}
+        (err) => {},
       );
 
       db.run(
@@ -177,7 +170,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
                   userid integer,
                   FOREIGN KEY(userid) REFERENCES users(id)
                   ON DELETE CASCADE  ON UPDATE NO ACTION)`,
-        (err) => {}
+        (err) => {},
       );
 
       db.run(
@@ -188,7 +181,24 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
                   ON DELETE CASCADE ON UPDATE NO ACTION,
                   FOREIGN KEY(collectionid) REFERENCES collections(id)
                   ON DELETE CASCADE ON UPDATE NO ACTION)`,
-        (err) => {}
+        (err) => {},
+      );
+      // entries
+      db.run(
+        `CREATE TABLE entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    word text NOT NULL,
+    explanation text,
+    example text,
+    category text CHECK(category IN ('word','phrase','grammar','idiom','note')),
+    tags text DEFAULT '[]',
+    rating integer DEFAULT 0,
+    includeInFlashcards INTEGER DEFAULT 0,
+    createdAt text,
+    userid integer,
+    FOREIGN KEY(userid) REFERENCES users(id)
+    ON DELETE CASCADE ON UPDATE NO ACTION)`,
+        (err) => {},
       );
     });
 
