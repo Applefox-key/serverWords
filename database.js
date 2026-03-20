@@ -193,7 +193,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
     category text CHECK(category IN ('word','phrase','grammar','idiom','note')),
     tags text DEFAULT '[]',
     rating integer DEFAULT 0,
-    includeInFlashcards INTEGER DEFAULT 0,
+    includeInPractice INTEGER DEFAULT 0,
     createdAt text,
     userid integer,
     FOREIGN KEY(userid) REFERENCES users(id)

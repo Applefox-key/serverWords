@@ -11,7 +11,7 @@ export const getOne = async (user, id) => {
 export const createEntry = async (user, data) => {
   return await new Promise((resolve, reject) => {
     const query = `INSERT INTO entries 
-      (word, explanation, example, category, tags, rating, includeInFlashcards, createdAt, userid) 
+      (word, explanation, example, category, tags, rating, includeInPractice, createdAt, userid) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const params = [
       data.word,
@@ -20,7 +20,7 @@ export const createEntry = async (user, data) => {
       data.category,
       data.tags,
       data.rating ?? 0,
-      data.includeInFlashcards ?? 0,
+      data.includeInPractice ?? 0,
       new Date().toISOString(),
       user.id,
     ];
@@ -61,9 +61,9 @@ export const updateEntry = async (user, id, data) => {
     fields.push("rating = ?");
     params.push(data.rating);
   }
-  if (data.includeInFlashcards !== undefined) {
-    fields.push("includeInFlashcards = ?");
-    params.push(data.includeInFlashcards);
+  if (data.includeInPractice !== undefined) {
+    fields.push("includeInPractice = ?");
+    params.push(data.includeInPractice);
   }
 
   if (fields.length === 0) return { error: "no fields to update" };
