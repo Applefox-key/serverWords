@@ -18,18 +18,18 @@ export const getAllWithContent = async () => {
   if (!rows) return [];
   return rows;
 };
-//get  all collections with content
+//get  all collections with count of cards
 export const getAllWithCount = async () => {
   const rows = await db_all(
     `SELECT collections.id, collections.name AS name, collections.note, isPublic, isFavorite, categoryid, 
       categories.name AS category,  
       COUNT(content.id) AS content_count
        FROM collections  
-       LEFT JOIN  content ON collections.id = content.collectionid
-       LEFT JOIN  categories  
-       ON collections.categoryid = categories.id
+       LEFT JOIN content ON collections.id = content.collectionid
+       LEFT JOIN categories ON collections.categoryid = categories.id
        WHERE isPublic = ${true}
-       ORDER BY categories.name ASC, collections.name ASC, content.question ASC;
+       GROUP BY collections.id
+       ORDER BY categories.name ASC, collections.name ASC;
        `
   );
 
@@ -74,7 +74,7 @@ export const getAll = async (user) => {
 //get one collection by id
 export const getOne = async (id) => {
   const row = await db_get(
-    "SELECT * FROM collections isPublic=${true} AND WHERE id = ? ",
+    "SELECT * FROM collections WHERE isPublic = ${true} AND id = ? ",
     [id]
   );
   if (!row) return [];
