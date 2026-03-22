@@ -15,6 +15,7 @@ export const formatCategoriesCollection = (result, pub = false) => {
       isPublic,
       collectionName,
       isMy,
+      cardCount,
     } = row;
     let categoryName = name ? name.toLowerCase() : "No category";
     if (!groupedMap.has(categoryName)) {
@@ -29,6 +30,7 @@ export const formatCategoriesCollection = (result, pub = false) => {
       const collectionObj = {
         id: collectionid,
         name: collectionName,
+        cardCount: cardCount ?? 0,
       };
       if (!pub) {
         collectionObj.isPublic = isPublic;
@@ -82,8 +84,6 @@ export const getCategoryById = async (user, id, isPublic = false) => {
 };
 //get ALL
 export const getCategoryAll = async (user) => {
-  // let query = `SELECT * FROM categories WHERE userid=?`;
-
   let query = `SELECT categories.id, categories.name AS name, categories.userid as userid, COUNT(collections.id) AS collection_count
   FROM categories  
   LEFT JOIN collections  
@@ -107,7 +107,6 @@ export const getPubCategoryAll = async (isPublic = false) => {
   );
 
   if (!rows) return [];
-  // const uniqueCategories = [...new Set(rows.map((item) => item.category))];
   const categoriesMap = rows.reduce((map, item) => {
     if (item.category) {
       if (!map.has(item.category)) {
@@ -125,7 +124,6 @@ export const getPubCategoryAll = async (isPublic = false) => {
 };
 //get ALL with collections list
 export const getCategoryWithCollections = async (user, isPublic = false) => {
-  // let query = `SELECT * FROM categories WHERE userid=?`;
   let queryPart = "";
   let queryPart0 = "";
   const userid = user.id;
@@ -135,11 +133,15 @@ export const getCategoryWithCollections = async (user, isPublic = false) => {
   } else queryPart += ` WHERE categories.userid=${userid}`;
 
   let query = `SELECT categories.id, categories.name AS name, categories.userid as userid, 
-              collections.id AS collectionid, collections.isFavorite, collections.isPublic as isPublic, collections.name as collectionName ${queryPart0}
+              collections.id AS collectionid, collections.isFavorite, collections.isPublic as isPublic, collections.name as collectionName,
+              COUNT(content.id) AS cardCount ${queryPart0}
   FROM collections 
   LEFT JOIN categories
   ON collections.categoryid = categories.id
+  LEFT JOIN content
+  ON content.collectionid = collections.id
   ${queryPart}
+  GROUP BY collections.id
   ORDER BY name ASC;`;
 
   let params = [];
@@ -160,21 +162,6 @@ export const createUserCategory = async (user, name) => {
     [name, userid]
   );
 };
-
-// export const createPbCategory = async (name) => {
-//   //check if the category with such name is already exist
-//   let categ = await getCategoryByName(name, true);
-
-//   if (categ) return categ;
-//   //   ? { id: categ.id }
-//   //   : { error: `category with name ${name} is already exist` };
-//   //create new and retun id
-//   let result = await db_get(
-//     `INSERT INTO categories (name, userid) VALUES (?,?) RETURNING id`,
-//     [name, null]
-//   );
-//   return result ? result : null;
-// };
 
 //edit category's name
 export const editCategory = async (user, name, id, isPublic = false) => {
@@ -217,14 +204,3 @@ export const deleteUsersAllCategory = async (user) => {
     });
   return res;
 };
-
-// // copy user category to public category and return it's id
-// export const getPbCategoryFromUser = async (usCatid) => {
-//   if (!usCatid) return null; //no category
-//   //get user category by id
-//   let usCateg = await getCategoryById(user,usCatid);
-
-//   if (usCateg.error) return null;
-//   //create pb
-//   return createPbCategory(usCateg.name);
-// };
