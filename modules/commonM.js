@@ -1,5 +1,6 @@
 import { db_run, db_all } from "../helpers/dbAsync.js";
 import { saveImg } from "./images.js";
+import { getByCollection } from "./collectionTagsM.js";
 
 //get one collections with content ADMIN
 export const getOneWithContentAdmin = async (id) => {
@@ -97,12 +98,14 @@ export const getOneWithContent = async (user, id) => {
     ON collections.id = content.collectionid
     LEFT JOIN  categories  
     ON collections.categoryid = categories.id
-    WHERE collections.userid = ? AND collections.id = ? 
+    WHERE collections.userid = ? AND collections.id = ?
     ORDER BY collections.name ASC, content.question ASC;`,
     [userid, id]
   );
 
-  return !rows ? [] : rows;
+  if (!rows || rows.length === 0) return [];
+  const tags = await getByCollection(id);
+  return rows.map(row => ({ ...row, collectionTags: tags }));
 };
 
 //create content by collection id

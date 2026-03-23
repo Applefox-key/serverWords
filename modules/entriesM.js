@@ -1,24 +1,30 @@
 import { db_get, db_all, db_run } from "../helpers/dbAsync.js";
+import { getTagsForEntries, getByEntry } from "./entryTagsM.js";
 
 export const getAll = async (user) => {
-  return await db_all(`SELECT * FROM entries WHERE userid = ?`, [user.id]);
+  const rows = await db_all(`SELECT * FROM entries WHERE userid = ?`, [user.id]);
+  if (!rows) return [];
+  const tagsMap = await getTagsForEntries(user);
+  return rows.map(row => ({ ...row, tags: tagsMap[row.id] ?? [] }));
 };
 
 export const getOne = async (user, id) => {
-  return await db_get(`SELECT * FROM entries WHERE id = ? AND userid = ?`, [id, user.id]);
+  const row = await db_get(`SELECT * FROM entries WHERE id = ? AND userid = ?`, [id, user.id]);
+  if (!row) return null;
+  const tags = await getByEntry(id);
+  return { ...row, tags };
 };
 
 export const createEntry = async (user, data) => {
   return await new Promise((resolve, reject) => {
     const query = `INSERT INTO entries 
-      (word, explanation, example, category, tags, rating, includeInPractice, createdAt, userid) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      (word, explanation, example, category, rating, includeInPractice, createdAt, userid) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
     const params = [
       data.word,
       data.explanation,
       data.example,
       data.category,
-      data.tags,
       data.rating ?? 0,
       data.includeInPractice ?? 0,
       new Date().toISOString(),
@@ -52,10 +58,6 @@ export const updateEntry = async (user, id, data) => {
   if (data.category !== undefined) {
     fields.push("category = ?");
     params.push(data.category);
-  }
-  if (data.tags !== undefined) {
-    fields.push("tags = ?");
-    params.push(data.tags);
   }
   if (data.rating !== undefined) {
     fields.push("rating = ?");

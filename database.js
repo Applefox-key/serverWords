@@ -200,6 +200,56 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
     ON DELETE CASCADE ON UPDATE NO ACTION)`,
         (err) => {},
       );
+
+      // entries tags
+      db.run(
+        `CREATE TABLE entry_tags (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     name TEXT NOT NULL,
+     userid INTEGER,
+     FOREIGN KEY(userid) REFERENCES users(id)
+     ON DELETE CASCADE ON UPDATE NO ACTION)`,
+        (err) => {},
+      );
+
+      // entries to tags
+      db.run(
+        `CREATE TABLE entries_to_tags (
+  entryid INTEGER,
+  tagid INTEGER,
+  FOREIGN KEY(entryid) REFERENCES entries(id)
+  ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY(tagid) REFERENCES entry_tags(id)
+  ON DELETE CASCADE ON UPDATE NO ACTION,
+  PRIMARY KEY(entryid, tagid)
+)`,
+        (err) => {},
+      );
+
+      // collections tags
+      db.run(
+        `CREATE TABLE collection_tags (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  userid INTEGER,
+  FOREIGN KEY(userid) REFERENCES users(id)
+  ON DELETE CASCADE ON UPDATE NO ACTION)`,
+        (err) => {},
+      );
+
+      // collections to tags
+      db.run(
+        `CREATE TABLE collections_to_tags (
+  collectionid INTEGER,
+  tagid INTEGER,
+  FOREIGN KEY(collectionid) REFERENCES collections(id)
+  ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY(tagid) REFERENCES collection_tags(id)
+  ON DELETE CASCADE ON UPDATE NO ACTION,
+  PRIMARY KEY(collectionid, tagid)
+)`,
+        (err) => {},
+      );
     });
 
     //----------------------------------------------------------------------------

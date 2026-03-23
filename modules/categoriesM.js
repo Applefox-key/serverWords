@@ -1,4 +1,5 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
+import { getTagsForCollections } from "./collectionTagsM.js";
 export const formatCategoriesCollection = (result, pub = false) => {
   if (result == []) return [];
 
@@ -16,6 +17,7 @@ export const formatCategoriesCollection = (result, pub = false) => {
       collectionName,
       isMy,
       cardCount,
+      tags,
     } = row;
     let categoryName = name ? name.toLowerCase() : "No category";
     if (!groupedMap.has(categoryName)) {
@@ -31,6 +33,7 @@ export const formatCategoriesCollection = (result, pub = false) => {
         id: collectionid,
         name: collectionName,
         cardCount: cardCount ?? 0,
+        tags: tags ?? [],
       };
       if (!pub) {
         collectionObj.isPublic = isPublic;
@@ -145,7 +148,13 @@ export const getCategoryWithCollections = async (user, isPublic = false) => {
   ORDER BY name ASC;`;
 
   let params = [];
-  return await db_all(query, params);
+  const rows = await db_all(query, params);
+  if (!rows) return [];
+  if (!isPublic) {
+    const tagsMap = await getTagsForCollections(user);
+    return rows.map(row => ({ ...row, tags: tagsMap[row.collectionid] ?? [] }));
+  }
+  return rows;
 };
 //create (one for user and return new row's id )or (create one for public and return new row's id)
 export const createUserCategory = async (user, name) => {

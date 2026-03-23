@@ -1,6 +1,7 @@
 import { db_run, db_get, db_all } from "../helpers/dbAsync.js";
 import { sendError } from "../helpers/responseHelpers.js";
 import { deleteImgs } from "./images.js";
+import { getTagsForCollections, getByCollection } from "./collectionTagsM.js";
 
 //all by admin
 export const getAllUsersCollections = async () => {
@@ -36,7 +37,9 @@ export const getAll = async (user) => {
     ORDER BY collections.name COLLATE NOCASE ASC
     `
   );
-  return !rows ? [] : rows;
+  if (!rows) return [];
+  const tagsMap = await getTagsForCollections(user);
+  return rows.map(row => ({ ...row, tags: tagsMap[row.id] ?? [] }));
 };
 export const deleteAll = async (user) => {
   const userid = user.id;
@@ -56,7 +59,9 @@ export const getOne = async (user, id) => {
     ON collections.categoryid = categories.id WHERE userid = ? AND id = ? `,
     [userid, id]
   );
-  return !row ? [] : row;
+  if (!row) return [];
+  const tags = await getByCollection(id);
+  return { ...row, tags };
 };
 //create users one collection without content
 export const createCollection = async (user, set) => {

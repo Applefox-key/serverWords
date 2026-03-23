@@ -13,6 +13,7 @@ export const formatCollectionContent = (user, data, addIsMy = false) => {
           category: el.category,
           isPublic: el.isPublic,
           isFavorite: el.isFavorite,
+          tags: el.collectionTags ?? [],
         },
         content: [],
       });
