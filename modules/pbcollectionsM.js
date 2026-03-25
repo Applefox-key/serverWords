@@ -1,4 +1,5 @@
 import { db_get, db_all } from "../helpers/dbAsync.js";
+import { getTagsForPublicCollections } from "./collectionTagsM.js";
 
 //get  all collections with content
 export const getAllWithContent = async () => {
@@ -16,7 +17,8 @@ export const getAllWithContent = async () => {
   );
 
   if (!rows) return [];
-  return rows;
+  const tagsMap = await getTagsForPublicCollections();
+  return rows.map(row => ({ ...row, collectionTags: tagsMap[row.id] ?? [] }));
 };
 //get  all collections with count of cards
 export const getAllWithCount = async () => {
@@ -34,7 +36,8 @@ export const getAllWithCount = async () => {
   );
 
   if (!rows) return [];
-  return rows;
+  const tagsMap = await getTagsForPublicCollections();
+  return rows.map(row => ({ ...row, tags: tagsMap[row.id] ?? [] }));
 };
 //get  one collection with content
 export const getOneWithContent = async (id) => {
@@ -54,7 +57,8 @@ export const getOneWithContent = async (id) => {
   );
 
   if (!rows) return [];
-  return rows;
+  const tagsMap = await getTagsForPublicCollections();
+  return rows.map(row => ({ ...row, collectionTags: tagsMap[row.id] ?? [] }));
 };
 
 //get users all public collections (list)
@@ -68,7 +72,8 @@ export const getAll = async (user) => {
 `);
 
   if (!rows) return [];
-  return rows;
+  const tagsMap = await getTagsForPublicCollections();
+  return rows.map(row => ({ ...row, tags: tagsMap[row.id] ?? [] }));
 };
 
 //get one collection by id
