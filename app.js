@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import userRouter from "./routes/users.js";
 import phraseRouter from "./routes/expressions.js";
 import collectionsRouter from "./routes/collections.js";
@@ -22,7 +23,20 @@ export const app = express();
 // const port = 9002;
 const port = 8000;
 process.env.TZ = "Etc/Universal"; // UTC +00:00
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://flashcards.learnapp.pro",
+    "https://phrases.learnapp.pro",
+    "https://tracker.learnapp.pro",
+    "https://learnapp.pro",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "http://localhost:8080",
+  ],
+  credentials: true,
+}));
+app.use(cookieParser());
 app.use(express.static("public"));
 app.use("/images", express.static("public/images"));
 app.use(express.urlencoded({ extended: true }));
@@ -67,14 +81,21 @@ app.use(function (req, res) {
 export async function autorisation(req, res, next) {
   let token;
 
-  if (!req.headers.authorization && !req.query.token) {
+  if (req.headers.authorization) {
+    token = req.headers.authorization.split(" ")[1];
+  } else if (req.query.token) {
+    token = req.query.token;
+  } else if (req.cookies?.learnapp_token) {
+    token = req.cookies.learnapp_token;
+  } else {
     return res.status(403).json({ error: "No credentials sent! Please relogin!" });
-  } else token = req.headers.authorization ? req.headers.authorization.split(" ")[1] : req.query.token;
+  }
 
   let userRow = await usr.getUserByToken(token);
 
   if (!userRow) return sendError(res, "User's not found. Please relogin!", 403);
   req.user = userRow;
+  req.token = token;
   if (req.user && req.user.role !== "admin") await runDailyQueueUpdate(userRow);
   next();
 }

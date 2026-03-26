@@ -104,6 +104,17 @@ router.post("/login", async (req, res, next) => {
 
     const result = await usr.login(req.body.data.email, req.body.data.password);
 
+    if (!result.error) {
+      const isProd = process.env.NODE_ENV === "production";
+      res.cookie("learnapp_token", result.token, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: "lax",
+        domain: isProd ? ".learnapp.pro" : undefined,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+    }
+
     res
       .status(result.error ? 400 : 200)
       .json(
@@ -120,10 +131,13 @@ router.post("/login", async (req, res, next) => {
 router.delete("/logout", async (req, res, next) => {
   try {
     const token = req.token;
-    if (!token) {
-      return sendError(res, "session is not found");
-    }
     const result = await usr.logout(token);
+
+    // Clear the shared cookie
+    const isProd = process.env.NODE_ENV === "production";
+    res.clearCookie("learnapp_token", {
+      domain: isProd ? ".learnapp.pro" : undefined,
+    });
 
     sendResult(res, result);
   } catch (error) {

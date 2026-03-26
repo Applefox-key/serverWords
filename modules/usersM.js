@@ -5,7 +5,11 @@ import md5 from "md5";
 import * as dotenv from "dotenv";
 import { saveImgAvatar } from "./avatars.js";
 import { sendError } from "../helpers/responseHelpers.js";
+import jwt from "jsonwebtoken";
 dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_dev_secret_change_in_production";
+const JWT_EXPIRES_IN = "30d";
 
 export const getAllUsers = async () => {
   try {
@@ -36,33 +40,37 @@ export const getUserById = async (id) => {
 };
 export const getUserByToken = async (token) => {
   try {
-    const session = await db_get("SELECT * FROM sessions WHERE token = ?", [
-      token,
-    ]);
-    if (!session) return;
-    const row = await db_get("SELECT * FROM users WHERE id = ?", [
-      session.userid,
-    ]);
+    // Try JWT first
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (jwtErr) {
+      // Not a valid JWT — fall back to legacy session lookup
+      const session = await db_get("SELECT * FROM sessions WHERE token = ?", [token]);
+      if (!session) return;
+      const row = await db_get("SELECT * FROM users WHERE id = ?", [session.userid]);
+      if (!row) return;
+      return row;
+    }
+    // JWT valid — load user from DB to get fresh data
+    const row = await db_get("SELECT * FROM users WHERE id = ?", [decoded.userid]);
     if (!row) return;
     return row;
   } catch (error) {
     return { error: error.message };
   }
 };
-export const createToken = async (userid) => {
+export const createToken = async (userid, role) => {
   try {
-    let token =
-      typeof global.it === "function"
-        ? "testtoken"
-        : Number(new Date()).toString() + userid;
-    let res = await db_run(
-      "INSERT INTO sessions (token, userid) VALUES (?,?)",
-      [token, userid]
+    if (typeof global.it === "function") return "testtoken";
+    const token = jwt.sign(
+      { userid, role },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
     );
-
-    return res.error ? { error: err } : token;
+    return token;
   } catch (error) {
-    sendError(res, error.message);
+    return { error: error.message };
   }
 };
 export const login = async (email, password) => {
@@ -72,7 +80,7 @@ export const login = async (email, password) => {
     if (!user) return { error: "user not found" };
     var passw = password ? md5(password) : null;
     if (user.password != passw) return { error: "wrong password!" };
-    let token = await createToken(user.id);
+    let token = await createToken(user.id, user.role);
     if (token.error) return { error: token.error };
     return { token: token, role: user.role };
   } catch (error) {
@@ -82,9 +90,11 @@ export const login = async (email, password) => {
 
 export const logout = async (token) => {
   try {
-    return await db_run(`DELETE FROM sessions WHERE token = ?`, [token]);
+    // Try to delete legacy session if it exists (no-op for JWT tokens)
+    await db_run(`DELETE FROM sessions WHERE token = ?`, [token]);
+    return { message: "success" };
   } catch (error) {
-    sendError(res, error.message);
+    return { message: "success" }; // logout always succeeds client-side
   }
 };
 export const updateUser = async (user, userid, set, img) => {
