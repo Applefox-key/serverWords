@@ -120,7 +120,7 @@ export const getListAll = async (user) => {
 
 export const getContentById = async (user, id) => {
   const query = `
-    SELECT c.id, c.question, c.answer, c.note, c.imgA, c.imgQ
+    SELECT c.id, c.question, c.answer, c.note, c.imgA, c.imgQ, col.id AS collectionid, col.name AS collectionname
     FROM content c
     JOIN collections col ON c.collectionid = col.id
     JOIN playlistsItems pi ON col.id = pi.collectionid
@@ -170,10 +170,7 @@ export const edit = async (user, name, listIds = null, id) => {
   const userid = user.id;
 
   // Update the playlist in the playlists table
-  await db_run(
-    `UPDATE playlists SET name = COALESCE(?, name) WHERE id = ? AND userid = ?`,
-    [name, id, userid]
-  );
+  await db_run(`UPDATE playlists SET name = COALESCE(?, name) WHERE id = ? AND userid = ?`, [name, id, userid]);
 
   // Delete existing playlist items for the given playlist
   await db_run(`DELETE FROM playlistsItems WHERE playlistid = ?`, [id]);
@@ -187,15 +184,9 @@ export const edit = async (user, name, listIds = null, id) => {
 
     if (playlistItems.length > 0) {
       const placeholders = playlistItems.map(() => "(?, ?)").join(",");
-      const values = playlistItems.flatMap((item) => [
-        item.playlistid,
-        item.collectionid,
-      ]);
+      const values = playlistItems.flatMap((item) => [item.playlistid, item.collectionid]);
 
-      await db_run(
-        `INSERT INTO playlistsItems (playlistid, collectionid) VALUES ${placeholders}`,
-        values
-      );
+      await db_run(`INSERT INTO playlistsItems (playlistid, collectionid) VALUES ${placeholders}`, values);
     }
   }
 
