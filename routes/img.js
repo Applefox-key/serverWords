@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { getByID_forImg } from "../modules/collectionsM.js";
 import { sendError } from "../helpers/responseHelpers.js";
+import fs from "fs";
 
 router.get("/", async (req, res) => {
   const userId = req.user.id;
@@ -32,6 +33,22 @@ router.get("/", async (req, res) => {
 
   res.sendFile(userFolderPath);
 });
+router.get("/entry", (req, res) => {
+  const userId = req.user.id;
+  const filename = req.query.img;
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const userFolderPath = path.join(
+    path.join(__dirname, ".."),
+    "content",
+    userId.toString(),
+    "entries",
+    filename.toString()
+  );
+
+  if (!fs.existsSync(userFolderPath)) return sendError(res, "not found");
+  res.sendFile(userFolderPath);
+});
+
 router.get("/avatars", (req, res) => {
   const userId = req.user.id;
   const filename = req.query.img;

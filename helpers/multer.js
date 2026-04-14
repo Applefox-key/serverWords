@@ -54,5 +54,27 @@ const storageAVATARS = multer.diskStorage({
   },
 });
 
+const storageENTRIES = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const userId = req.user.id;
+    checkIsFolderExist(["content", userId.toString(), "entries"]);
+    const userFolderPath = path.join(
+      "./",
+      "content",
+      userId.toString(),
+      "entries"
+    );
+    cb(null, userFolderPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+    );
+  },
+});
+
 export const upload = multer({ storage: storage });
 export const uploadUserAvatar = multer({ storage: storageAVATARS });
+export const uploadEntryImg = multer({ storage: storageENTRIES });

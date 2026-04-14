@@ -1,5 +1,7 @@
 import { db_get, db_all, db_run } from "../helpers/dbAsync.js";
 import { getTagsForEntries, getByEntry } from "./entryTagsM.js";
+import fs from "fs";
+import path from "path";
 
 export const getAll = async (user) => {
   const rows = await db_all(`SELECT * FROM entries WHERE userid = ?`, [user.id]);
@@ -17,9 +19,9 @@ export const getOne = async (user, id) => {
 
 export const createEntry = async (user, data) => {
   return await new Promise((resolve, reject) => {
-    const query = `INSERT INTO entries 
-      (word, explanation, example, category, rating, includeInPractice, createdAt, userid) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const query = `INSERT INTO entries
+      (word, explanation, example, category, rating, includeInPractice, createdAt, img, userid)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const params = [
       data.word,
       data.explanation,
@@ -28,6 +30,7 @@ export const createEntry = async (user, data) => {
       data.rating ?? 0,
       data.includeInPractice ?? 0,
       new Date().toISOString(),
+      data.img ?? null,
       user.id,
     ];
     import("../database.js").then(({ default: db }) => {
@@ -67,6 +70,10 @@ export const updateEntry = async (user, id, data) => {
     fields.push("includeInPractice = ?");
     params.push(data.includeInPractice);
   }
+  if (data.img !== undefined) {
+    fields.push("img = ?");
+    params.push(data.img);
+  }
 
   if (fields.length === 0) return { error: "no fields to update" };
 
@@ -76,4 +83,11 @@ export const updateEntry = async (user, id, data) => {
 
 export const deleteEntry = async (user, id) => {
   return await db_run(`DELETE FROM entries WHERE id = ? AND userid = ?`, [id, user.id]);
+};
+
+export const deleteEntryImg = (userId, filename) => {
+  const filePath = path.join(".", "content", userId.toString(), "entries", filename);
+  fs.unlink(filePath, (err) => {
+    if (err) console.error("deleteEntryImg error:", err.message);
+  });
 };

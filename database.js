@@ -195,6 +195,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
     rating integer DEFAULT 0,
     includeInPractice INTEGER DEFAULT 0,
     createdAt text,
+    img TEXT DEFAULT NULL,
     userid integer,
     FOREIGN KEY(userid) REFERENCES users(id)
     ON DELETE CASCADE ON UPDATE NO ACTION)`,
