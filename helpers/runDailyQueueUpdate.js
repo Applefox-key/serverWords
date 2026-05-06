@@ -5,7 +5,7 @@ import { db_all } from "./dbAsync.js";
 
 export async function runDailyQueueUpdate(user) {
   if (!user) return;
-  const settings = JSON.parse(user.settings);
+  const settings = user.settings ? JSON.parse(user.settings) : {};
   const limit = settings.dailyQueueLimit || 0;
 
   if (!limit) return;
@@ -22,7 +22,7 @@ export async function runDailyQueueUpdate(user) {
   // 1.get first N items by id, which inQueue = 1
   const expressions = await db_all(
     `SELECT * FROM expressions WHERE userid = ? AND inQueue = 1 ORDER BY id ASC LIMIT ?`,
-    [user.id, limit]
+    [user.id, limit],
   );
 
   for (const expr of expressions) {

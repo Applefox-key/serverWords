@@ -144,6 +144,24 @@ export const createUser = async (set) => {
     sendError(res, error.message);
   }
 };
+export const loginOrCreateGoogleUser = async ({ email, name, img }) => {
+  try {
+    let user = await getUserByEmail(email);
+    if (!user) {
+      await db_run(
+        `INSERT INTO users (name, email, img, role, settings) VALUES (?,?,?,?,?)`,
+        [name, email, img, "user", null]
+      );
+      user = await getUserByEmail(email);
+    }
+    const token = await createToken(user.id, user.role);
+    if (token.error) return { error: token.error };
+    return { token, role: user.role };
+  } catch (error) {
+    return { error: error.message };
+  }
+};
+
 export const deleteUser = async (user) => {
   try {
     const userid = user.id;

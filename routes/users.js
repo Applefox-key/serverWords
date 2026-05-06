@@ -4,11 +4,24 @@ import express from "express";
 import bodyParser from "body-parser";
 import md5 from "md5";
 import { uploadUserAvatar } from "../helpers/multer.js";
-import {
-  sendError,
-  sendResponse,
-  sendResult,
-} from "../helpers/responseHelpers.js";
+import { sendError, sendResponse, sendResult } from "../helpers/responseHelpers.js";
+import { OAuth2Client } from "google-auth-library";
+import { google } from "googleapis";
+
+const getOAuthClient = () =>
+  new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI);
+
+const ALLOWED_REDIRECTS = [
+  "https://phrasely.learnapp.pro",
+  "https://flashcards.learnapp.pro",
+  "https://phrases.learnapp.pro",
+  "https://tracker.learnapp.pro",
+  "https://learnapp.pro",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:3000",
+  "http://localhost:8080",
+];
 
 const router = express.Router();
 const app = express();
@@ -117,11 +130,7 @@ router.post("/login", async (req, res, next) => {
 
     res
       .status(result.error ? 400 : 200)
-      .json(
-        result.error
-          ? { error: result.error }
-          : { token: result.token, role: result.role }
-      );
+      .json(result.error ? { error: result.error } : { token: result.token, role: result.role });
   } catch (error) {
     sendError(res, error.message);
   }
@@ -166,9 +175,7 @@ router.patch("/", uploadUserAvatar.single("file"), async (req, res, next) => {
     };
 
     let result = await usr.updateUser(req.user, userid, data, req.file);
-    res
-      .status(result.error ? 400 : 200)
-      .json(result.error ? { error: result.error } : { message: "success" });
+    res.status(result.error ? 400 : 200).json(result.error ? { error: result.error } : { message: "success" });
   } catch (error) {
     sendError(res, error.message);
   }
@@ -220,5 +227,58 @@ router.patch("/byadmin", async (req, res, next) => {
     sendError(res, error.message);
   }
 });
+router.get("/auth/google", (req, res) => {
+  const redirect = (req.query.redirect || process.env.FRONTEND_URL || ALLOWED_REDIRECTS[0]).replace(/\/$/, "");
+  if (!ALLOWED_REDIRECTS.includes(redirect)) {
+    return res.status(400).json({ error: "invalid redirect" });
+  }
+  const client = getOAuthClient();
+  const url = client.generateAuthUrl({
+    access_type: "online",
+    scope: ["email", "profile"],
+    state: Buffer.from(redirect).toString("base64"),
+  });
+  res.redirect(url);
+});
+
+router.get("/auth/google/callback", async (req, res) => {
+  console.log("Google callback hit", req.query);
+  const fallback = process.env.FRONTEND_URL || "http://localhost:5173";
+  const redirectTo = req.query.state ? Buffer.from(req.query.state, "base64").toString() : fallback;
+
+  try {
+    const { code } = req.query;
+    if (!code) return res.redirect(`${redirectTo}?error=no_code`);
+
+    const client = getOAuthClient();
+    const { tokens } = await client.getToken(code);
+    client.setCredentials(tokens);
+
+    const { data } = await google.oauth2({ version: "v2", auth: client }).userinfo.get();
+
+    const result = await usr.loginOrCreateGoogleUser({
+      email: data.email,
+      name: data.name,
+      img: data.picture,
+    });
+
+    if (result.error) return res.redirect(`${redirectTo}?error=${result.error}`);
+
+    const isProd = process.env.NODE_ENV === "production";
+    res.cookie("learnapp_token", result.token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "lax",
+      domain: isProd ? ".learnapp.pro" : undefined,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    res.redirect(redirectTo);
+  } catch (error) {
+    console.error("Google auth error:", error.message);
+    res.redirect(`${redirectTo}?error=google_auth_failed`);
+  }
+});
+
 // module.exports = router;
 export default router;

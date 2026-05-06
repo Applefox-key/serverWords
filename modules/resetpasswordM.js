@@ -16,7 +16,7 @@ const sendEmail = async (userEmail, pageUrl) => {
   const OAuth2_client = new google.auth.OAuth2(
     gmailConfig.client_id,
     gmailConfig.client_secret,
-    gmailConfig.redirect_uris
+    gmailConfig.redirect_uris,
   );
   OAuth2_client.setCredentials({
     refresh_token: gmailConfig.refresh_token,
@@ -40,8 +40,21 @@ const sendEmail = async (userEmail, pageUrl) => {
     let mailOptions = {
       from: gmailConfig.email,
       to: userEmail,
-      subject: "reset password LEARNAPP",
-      text: "Hello, this is a link to the reset page! " + pageUrl,
+      subject: "Password Reset Request LEARNAPP",
+      text: `Hello,
+
+We received a request to reset the password for your account.
+
+To set a new password, please use the link below:
+${pageUrl}
+
+This link will expire in 24 hours. If you did not request a password reset, you can safely ignore this message.
+
+Please do not reply to this email.
+
+Best regards,
+Support Team
+`,
     };
 
     const result = await transporter.sendMail(mailOptions);
@@ -66,10 +79,11 @@ export const createResetToken = async (userid) => {
     d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
     let expirationDate = d.getTime();
 
-    let res = await db_run(
-      "INSERT INTO resettoken (token, userid, expirationDate) VALUES (?,?,?)",
-      [resetToken, userid, expirationDate]
-    );
+    let res = await db_run("INSERT INTO resettoken (token, userid, expirationDate) VALUES (?,?,?)", [
+      resetToken,
+      userid,
+      expirationDate,
+    ]);
 
     return res.error ? { error: err } : resetToken;
   } catch (error) {
@@ -91,7 +105,7 @@ export const findValidToken = async (userid) => {
           FROM resettoken 
           WHERE userid = ?  
           AND  expirationDate > ?`,
-      [userid, tm]
+      [userid, tm],
     );
 
     if (!resetRow) return { error: error.message };
@@ -129,7 +143,7 @@ export const resetTokenValidation = async (resetToken) => {
           FROM resettoken 
           WHERE token = ?  
           AND  expirationDate > ?`,
-      [resetToken, tm]
+      [resetToken, tm],
     );
 
     if (!resetRow)
@@ -153,7 +167,7 @@ export const updateUserPassword = async (userid, password) => {
                password = COALESCE(?,password), 
                img = COALESCE(?,img)
                WHERE id = ?`,
-      [null, null, password, null, userid]
+      [null, null, password, null, userid],
     );
   } catch (error) {
     return { error: error.message };
@@ -167,7 +181,7 @@ export const deleteAllUnvalid = async () => {
       `SELECT *
             FROM resettoken 
             WHERE expirationDate < ?`,
-      [tm]
+      [tm],
     );
     for (const element of resetRow) {
       await deleteResetToken(element.token);

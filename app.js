@@ -53,6 +53,8 @@ app.use(
     "POST/resetpassword",
     "GET/resetpassword",
     "PATCH/resetpassword",
+    "GET/users/auth/google",
+    "GET/users/auth/google/callback",
   ),
 );
 
