@@ -50,7 +50,8 @@ router.get("/entry", (req, res) => {
 });
 
 router.get("/avatars", (req, res) => {
-  const userId = req.user.id;
+  const userId = req.query.userid || (req.user && req.user.id);
+  if (!userId) return sendError(res, "userid is required", 400);
   const filename = req.query.img;
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const userFolderPath = path.join(
