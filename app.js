@@ -55,6 +55,7 @@ app.use(
     "PATCH/resetpassword",
     "GET/users/auth/google",
     "GET/users/auth/google/callback",
+    "GET/img/avatars",
   ),
 );
 
