@@ -31,7 +31,7 @@ export const getAllWithCount = async () => {
        LEFT JOIN categories ON collections.categoryid = categories.id
        WHERE isPublic = ${true}
        GROUP BY collections.id
-       ORDER BY categories.name ASC, collections.name ASC;
+       ORDER BY categories.name COLLATE NOCASE ASC, collections.name COLLATE NOCASE ASC;
        `
   );
 

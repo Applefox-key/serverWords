@@ -145,7 +145,7 @@ export const getCategoryWithCollections = async (user, isPublic = false) => {
   ON content.collectionid = collections.id
   ${queryPart}
   GROUP BY collections.id
-  ORDER BY name ASC;`;
+  ORDER BY name COLLATE NOCASE ASC, collections.name COLLATE NOCASE ASC;`;
 
   let params = [];
   const rows = await db_all(query, params);
