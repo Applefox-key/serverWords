@@ -16,6 +16,9 @@ export const formatCollectionContent = (user, data, addIsMy = false) => {
           tags: el.collectionTags ?? [],
         },
         content: [],
+        _preStats: el.stats_avgRate !== undefined
+          ? { avgRate: el.stats_avgRate, toLearn: el.stats_toLearn, inProgress: el.stats_inProgress, learned: el.stats_learned }
+          : null,
       });
     if (el.id_cont) {
       let val = map.get(el.id);
@@ -34,11 +37,19 @@ export const formatCollectionContent = (user, data, addIsMy = false) => {
     }
   });
 
-  return [...map.values()].map((item) => {
-    const rates = item.content.map((c) => c.rate).filter((r) => r != null);
-    const avgRate = rates.length
-      ? Math.round((rates.reduce((a, b) => a + b, 0) / rates.length) * 100) / 100
-      : null;
-    return { ...item, collection: { ...item.collection, avgRate } };
+  return [...map.values()].map(({ _preStats, ...item }) => {
+    const stats = _preStats ?? (() => {
+      const cards = item.content;
+      const rates = cards.map((c) => c.rate).filter((r) => r != null);
+      return {
+        avgRate: rates.length
+          ? Math.round((rates.reduce((a, b) => a + b, 0) / rates.length) * 100) / 100
+          : null,
+        toLearn: cards.filter((c) => c.rate != null && c.rate <= 1).length,
+        inProgress: cards.filter((c) => c.rate != null && c.rate >= 2 && c.rate <= 3).length,
+        learned: cards.filter((c) => c.rate != null && c.rate >= 4).length,
+      };
+    })();
+    return { ...item, collection: { ...item.collection, stats } };
   });
 };

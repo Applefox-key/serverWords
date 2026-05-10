@@ -30,7 +30,10 @@ export const getAll = async (user) => {
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, isFavorite,
     categories.name AS category,
-    (SELECT ROUND(AVG(rate), 2) FROM content WHERE collectionid = collections.id) AS avgRate
+    (SELECT ROUND(AVG(rate), 2) FROM content WHERE collectionid = collections.id) AS avgRate,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate <= 1) AS toLearn,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate >= 2 AND rate <= 3) AS inProgress,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate >= 4) AS learned
     FROM collections
     LEFT JOIN categories
     ON collections.categoryid = categories.id
@@ -40,7 +43,11 @@ export const getAll = async (user) => {
   );
   if (!rows) return [];
   const tagsMap = await getTagsForCollections(user);
-  return rows.map(row => ({ ...row, tags: tagsMap[row.id] ?? [] }));
+  return rows.map(({ avgRate, toLearn, inProgress, learned, ...row }) => ({
+    ...row,
+    tags: tagsMap[row.id] ?? [],
+    stats: { avgRate, toLearn, inProgress, learned },
+  }));
 };
 export const deleteAll = async (user) => {
   const userid = user.id;
@@ -56,15 +63,19 @@ export const getOne = async (user, id) => {
   const userid = user.id;
   const row = await db_get(
     `SELECT collections.name AS name, note, isPublic, isFavorite, categoryid, categories.name AS category,
-    (SELECT ROUND(AVG(rate), 2) FROM content WHERE collectionid = collections.id) AS avgRate
+    (SELECT ROUND(AVG(rate), 2) FROM content WHERE collectionid = collections.id) AS avgRate,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate <= 1) AS toLearn,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate >= 2 AND rate <= 3) AS inProgress,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate >= 4) AS learned
     FROM collections
     LEFT JOIN categories
     ON collections.categoryid = categories.id WHERE userid = ? AND id = ?`,
     [userid, id]
   );
   if (!row) return [];
+  const { avgRate, toLearn, inProgress, learned, ...rest } = row;
   const tags = await getByCollection(id);
-  return { ...row, tags };
+  return { ...rest, tags, stats: { avgRate, toLearn, inProgress, learned } };
 };
 //create users one collection without content
 export const createCollection = async (user, set) => {

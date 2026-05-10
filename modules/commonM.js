@@ -91,14 +91,16 @@ export const getOneWithContent = async (user, id, limit = null) => {
   const userid = user.id;
   const limitClause = limit ? ` LIMIT ${parseInt(limit)}` : "";
   const rows = await db_all(
-    `SELECT collections.id, collections.note, collections.name AS name,categoryid,
+    `SELECT collections.id, collections.note, collections.name AS name, categoryid,
           categories.name AS category, isPublic, isFavorite,
-          question, answer, imgA, imgQ , rate, content.note AS note_cont, content.id AS id_cont
+          question, answer, imgA, imgQ, rate, content.note AS note_cont, content.id AS id_cont,
+          (SELECT ROUND(AVG(c.rate), 2) FROM content c WHERE c.collectionid = collections.id) AS stats_avgRate,
+          (SELECT COUNT(*) FROM content c WHERE c.collectionid = collections.id AND c.rate <= 1) AS stats_toLearn,
+          (SELECT COUNT(*) FROM content c WHERE c.collectionid = collections.id AND c.rate >= 2 AND c.rate <= 3) AS stats_inProgress,
+          (SELECT COUNT(*) FROM content c WHERE c.collectionid = collections.id AND c.rate >= 4) AS stats_learned
     FROM collections
-    LEFT JOIN  content
-    ON collections.id = content.collectionid
-    LEFT JOIN  categories
-    ON collections.categoryid = categories.id
+    LEFT JOIN content ON collections.id = content.collectionid
+    LEFT JOIN categories ON collections.categoryid = categories.id
     WHERE collections.userid = ? AND collections.id = ?
     ORDER BY collections.name ASC, content.question ASC${limitClause};`,
     [userid, id]
