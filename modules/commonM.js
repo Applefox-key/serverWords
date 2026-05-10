@@ -87,19 +87,20 @@ export const getAllWithContentByCategory = async (catid) => {
   return !rows ? [] : rows;
 };
 //get users one collections with content
-export const getOneWithContent = async (user, id) => {
+export const getOneWithContent = async (user, id, limit = null) => {
   const userid = user.id;
+  const limitClause = limit ? ` LIMIT ${parseInt(limit)}` : "";
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name,categoryid,
           categories.name AS category, isPublic, isFavorite,
           question, answer, imgA, imgQ , rate, content.note AS note_cont, content.id AS id_cont
-    FROM collections  
-    LEFT JOIN  content  
+    FROM collections
+    LEFT JOIN  content
     ON collections.id = content.collectionid
-    LEFT JOIN  categories  
+    LEFT JOIN  categories
     ON collections.categoryid = categories.id
     WHERE collections.userid = ? AND collections.id = ?
-    ORDER BY collections.name ASC, content.question ASC;`,
+    ORDER BY collections.name ASC, content.question ASC${limitClause};`,
     [userid, id]
   );
 

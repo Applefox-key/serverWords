@@ -29,9 +29,10 @@ export const getAll = async (user) => {
   const userid = user.id;
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, isFavorite,
-    categories.name AS category
-    FROM collections  
-    LEFT JOIN categories  
+    categories.name AS category,
+    (SELECT ROUND(AVG(rate), 2) FROM content WHERE collectionid = collections.id) AS avgRate
+    FROM collections
+    LEFT JOIN categories
     ON collections.categoryid = categories.id
     WHERE collections.userid = ${userid}
     ORDER BY collections.name COLLATE NOCASE ASC
@@ -54,9 +55,11 @@ export const deleteAll = async (user) => {
 export const getOne = async (user, id) => {
   const userid = user.id;
   const row = await db_get(
-    `SELECT collections.name AS name, note, isPublic, isFavorite, categoryid, categories.name AS category FROM collections
-    LEFT JOIN categories 
-    ON collections.categoryid = categories.id WHERE userid = ? AND id = ? `,
+    `SELECT collections.name AS name, note, isPublic, isFavorite, categoryid, categories.name AS category,
+    (SELECT ROUND(AVG(rate), 2) FROM content WHERE collectionid = collections.id) AS avgRate
+    FROM collections
+    LEFT JOIN categories
+    ON collections.categoryid = categories.id WHERE userid = ? AND id = ?`,
     [userid, id]
   );
   if (!row) return [];

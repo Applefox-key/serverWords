@@ -286,7 +286,8 @@ router.delete("/:id", async (req, res, next) => {
 //Get user's one collections with content by collection id
 router.get("/:id/content", async (req, res, next) => {
   try {
-    let result = await common.getOneWithContent(req.user, req.params.id);
+    const preview = req.query.preview ? parseInt(req.query.preview) : null;
+    let result = await common.getOneWithContent(req.user, req.params.id, preview);
     if (!result) return sendError(res, "bad request");
 
     let resArr = formatCollectionContent(req.user, result);

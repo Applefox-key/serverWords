@@ -34,5 +34,11 @@ export const formatCollectionContent = (user, data, addIsMy = false) => {
     }
   });
 
-  return [...map.values()];
+  return [...map.values()].map((item) => {
+    const rates = item.content.map((c) => c.rate).filter((r) => r != null);
+    const avgRate = rates.length
+      ? Math.round((rates.reduce((a, b) => a + b, 0) / rates.length) * 100) / 100
+      : null;
+    return { ...item, collection: { ...item.collection, avgRate } };
+  });
 };
