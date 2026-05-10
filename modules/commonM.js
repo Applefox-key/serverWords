@@ -65,7 +65,7 @@ export const getAllWithContent = async (user, select = "") => {
        LEFT JOIN  categories  
        ON collections.categoryid = categories.id
        WHERE collections.userid = ? ${queryPart}
-       ORDER BY categories.name COLLATE NOCASE ASC, collections.name ASC, content.question ASC;`,
+       ORDER BY categories.name COLLATE NOCASE ASC, collections.name COLLATE NOCASE ASC, content.question COLLATE NOCASE ASC;`,
     [userid]
   );
 
@@ -81,7 +81,7 @@ export const getAllWithContentByCategory = async (catid) => {
        FROM collections  LEFT JOIN  content 
        ON collections.id = content.collectionid
        WHERE categoryid = ?  
-       ORDER BY collections.name ASC, content.question ASC;`,
+       ORDER BY collections.name COLLATE NOCASE ASC, content.question COLLATE NOCASE ASC;`,
     [catid]
   );
   return !rows ? [] : rows;
@@ -102,7 +102,7 @@ export const getOneWithContent = async (user, id, limit = null) => {
     LEFT JOIN content ON collections.id = content.collectionid
     LEFT JOIN categories ON collections.categoryid = categories.id
     WHERE collections.userid = ? AND collections.id = ?
-    ORDER BY collections.name ASC, content.question ASC${limitClause};`,
+    ORDER BY collections.name COLLATE NOCASE ASC, content.question COLLATE NOCASE ASC${limitClause};`,
     [userid, id]
   );
 
