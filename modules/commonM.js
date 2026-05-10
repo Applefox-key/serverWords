@@ -94,10 +94,10 @@ export const getOneWithContent = async (user, id, limit = null) => {
     `SELECT collections.id, collections.note, collections.name AS name, categoryid,
           categories.name AS category, isPublic, isFavorite,
           question, answer, imgA, imgQ, rate, content.note AS note_cont, content.id AS id_cont,
-          (SELECT ROUND(AVG(c.rate), 2) FROM content c WHERE c.collectionid = collections.id) AS stats_avgRate,
-          (SELECT COUNT(*) FROM content c WHERE c.collectionid = collections.id AND c.rate <= 1) AS stats_toLearn,
-          (SELECT COUNT(*) FROM content c WHERE c.collectionid = collections.id AND c.rate >= 2 AND c.rate <= 3) AS stats_inProgress,
-          (SELECT COUNT(*) FROM content c WHERE c.collectionid = collections.id AND c.rate >= 4) AS stats_learned
+          (SELECT ROUND(AVG(CASE WHEN typeof(c.rate) IN ('integer','real') THEN c.rate END), 2) FROM content c WHERE c.collectionid = collections.id) AS stats_avgRate,
+          (SELECT COUNT(*) FROM content c WHERE c.collectionid = collections.id AND typeof(c.rate) IN ('integer','real') AND c.rate <= 1) AS stats_toLearn,
+          (SELECT COUNT(*) FROM content c WHERE c.collectionid = collections.id AND typeof(c.rate) IN ('integer','real') AND c.rate >= 2 AND c.rate <= 3) AS stats_inProgress,
+          (SELECT COUNT(*) FROM content c WHERE c.collectionid = collections.id AND typeof(c.rate) IN ('integer','real') AND c.rate >= 4) AS stats_learned
     FROM collections
     LEFT JOIN content ON collections.id = content.collectionid
     LEFT JOIN categories ON collections.categoryid = categories.id
@@ -129,7 +129,7 @@ export const createCollectionContent = async (
       (set.question || "").trim(),
       (set.answer || "").trim(),
       (set.note || "").trim(),
-      set.rate ?? 0,
+      typeof set.rate === "number" ? set.rate : 0,
       id,
       imageQUrl,
       imageAUrl,

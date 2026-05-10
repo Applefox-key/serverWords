@@ -30,10 +30,10 @@ export const getAll = async (user) => {
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, isFavorite,
     categories.name AS category,
-    (SELECT ROUND(AVG(rate), 2) FROM content WHERE collectionid = collections.id) AS avgRate,
-    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate <= 1) AS toLearn,
-    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate >= 2 AND rate <= 3) AS inProgress,
-    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate >= 4) AS learned
+    (SELECT ROUND(AVG(CASE WHEN typeof(rate) IN ('integer','real') THEN rate END), 2) FROM content WHERE collectionid = collections.id) AS avgRate,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate <= 1) AS toLearn,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate >= 2 AND rate <= 3) AS inProgress,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate >= 4) AS learned
     FROM collections
     LEFT JOIN categories
     ON collections.categoryid = categories.id
@@ -63,10 +63,10 @@ export const getOne = async (user, id) => {
   const userid = user.id;
   const row = await db_get(
     `SELECT collections.name AS name, note, isPublic, isFavorite, categoryid, categories.name AS category,
-    (SELECT ROUND(AVG(rate), 2) FROM content WHERE collectionid = collections.id) AS avgRate,
-    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate <= 1) AS toLearn,
-    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate >= 2 AND rate <= 3) AS inProgress,
-    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND rate >= 4) AS learned
+    (SELECT ROUND(AVG(CASE WHEN typeof(rate) IN ('integer','real') THEN rate END), 2) FROM content WHERE collectionid = collections.id) AS avgRate,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate <= 1) AS toLearn,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate >= 2 AND rate <= 3) AS inProgress,
+    (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate >= 4) AS learned
     FROM collections
     LEFT JOIN categories
     ON collections.categoryid = categories.id WHERE userid = ? AND id = ?`,

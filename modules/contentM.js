@@ -32,7 +32,7 @@ export const editContent = async (user, set, imges) => {
       imgQ = ?,
       imgA = ?
       WHERE id = ?`,
-    [set.question, set.answer, set.note, set.rate, imageQUrl, imageAUrl, set.id]
+    [set.question, set.answer, set.note, set.rate == null ? null : (typeof set.rate === "number" ? set.rate : 0), imageQUrl, imageAUrl, set.id]
   );
 };
 
