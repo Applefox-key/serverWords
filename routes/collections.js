@@ -303,9 +303,10 @@ router.post(
   async (req, res, next) => {
     let isOneItem = false;
     try {
-      let list = req.body.data.list;
+      const rawData = typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body.data;
+      let list = rawData.list;
       if (!Array.isArray(list)) {
-        list = [req.body.data];
+        list = [rawData];
         isOneItem = true;
       }
 

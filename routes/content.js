@@ -47,9 +47,10 @@ router.patch(
   upload.fields([{ name: "imgAfile" }, { name: "imgQfile" }]),
   async (req, res, next) => {
     try {
+      const data = typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body.data;
       let result = await con.editContent(
         req.user,
-        { ...req.body.data },
+        { ...data },
         req.files
       );
       logResult(result);

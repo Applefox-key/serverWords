@@ -14,7 +14,8 @@ export const checkIsFolderExist = (foldArr) => {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const userId = req.user.id;
-    const collectionId = req.body.data.collectionid;
+    const parsed = typeof req.body.data === "string" ? JSON.parse(req.body.data) : (req.body.data || {});
+    const collectionId = parsed.collectionid ?? req.params?.id;
     checkIsFolderExist(["content", userId.toString(), collectionId.toString()]);
     const userFolderPath = path.join(
       "./",
