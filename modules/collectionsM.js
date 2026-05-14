@@ -27,10 +27,17 @@ export const getByID_forImg = async (id) => {
 //get users all collections without content
 export const getAll = async (user, pagination = {}) => {
   const userid = user.id;
-  const { page, limit } = pagination;
+  const { page, limit, search } = pagination;
   const isPaged = page != null && limit != null;
-  const limitClause = isPaged ? `LIMIT ? OFFSET ?` : "";
-  const params = isPaged ? [limit, (page - 1) * limit] : [];
+
+  const searchClause = search
+    ? `AND (LOWER(collections.name) LIKE LOWER(?) OR LOWER(collections.note) LIKE LOWER(?))`
+    : "";
+  const searchTerm = search ? `%${search}%` : null;
+  const params = [
+    ...(search ? [searchTerm, searchTerm] : []),
+    ...(isPaged ? [limit, (page - 1) * limit] : []),
+  ];
 
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, isFavorite,
@@ -40,11 +47,11 @@ export const getAll = async (user, pagination = {}) => {
     (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate >= 2 AND rate <= 3) AS inProgress,
     (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate >= 4) AS learned
     FROM collections
-    LEFT JOIN categories
-    ON collections.categoryid = categories.id
+    LEFT JOIN categories ON collections.categoryid = categories.id
     WHERE collections.userid = ${userid}
+    ${searchClause}
     ORDER BY collections.name COLLATE NOCASE ASC
-    ${limitClause}`,
+    ${isPaged ? "LIMIT ? OFFSET ?" : ""}`,
     params
   );
   if (!rows) return isPaged ? { data: [], total: 0, page, limit } : [];
@@ -60,7 +67,9 @@ export const getAll = async (user, pagination = {}) => {
   if (!isPaged) return data;
 
   const countRow = await db_get(
-    `SELECT COUNT(*) AS total FROM collections WHERE userid = ${userid}`
+    `SELECT COUNT(*) AS total FROM collections
+     WHERE userid = ${userid} ${searchClause}`,
+    search ? [searchTerm, searchTerm] : []
   );
   return { data, total: countRow.total, page, limit };
 };

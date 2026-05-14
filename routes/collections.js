@@ -197,6 +197,7 @@ router.get("/", async (req, res, next) => {
       pagination.page = Math.max(1, parseInt(req.query.page) || 1);
       pagination.limit = Math.max(1, parseInt(req.query.limit) || 20);
     }
+    if (req.query.search?.trim()) pagination.search = req.query.search.trim();
     const result = await col.getAll(req.user, pagination);
     if (Array.isArray(result)) {
       res.status(200).json({ data: result });

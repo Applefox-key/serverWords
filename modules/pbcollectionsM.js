@@ -22,10 +22,17 @@ export const getAllWithContent = async () => {
 };
 //get  all collections with count of cards
 export const getAllWithCount = async (pagination = {}) => {
-  const { page, limit } = pagination;
+  const { page, limit, search } = pagination;
   const isPaged = page != null && limit != null;
-  const limitClause = isPaged ? `LIMIT ? OFFSET ?` : "";
-  const params = isPaged ? [limit, (page - 1) * limit] : [];
+
+  const searchClause = search
+    ? `AND (LOWER(collections.name) LIKE LOWER(?) OR LOWER(collections.note) LIKE LOWER(?))`
+    : "";
+  const searchTerm = search ? `%${search}%` : null;
+  const params = [
+    ...(search ? [searchTerm, searchTerm] : []),
+    ...(isPaged ? [limit, (page - 1) * limit] : []),
+  ];
 
   const rows = await db_all(
     `SELECT collections.id, collections.name AS name, collections.note, isPublic, isFavorite, categoryid,
@@ -35,9 +42,10 @@ export const getAllWithCount = async (pagination = {}) => {
        LEFT JOIN content ON collections.id = content.collectionid
        LEFT JOIN categories ON collections.categoryid = categories.id
        WHERE isPublic = ${true}
+       ${searchClause}
        GROUP BY collections.id
        ORDER BY categories.name COLLATE NOCASE ASC, collections.name COLLATE NOCASE ASC
-       ${limitClause}`,
+       ${isPaged ? "LIMIT ? OFFSET ?" : ""}`,
     params
   );
 
@@ -50,7 +58,9 @@ export const getAllWithCount = async (pagination = {}) => {
   if (!isPaged) return data;
 
   const countRow = await db_get(
-    `SELECT COUNT(*) AS total FROM collections WHERE isPublic = ${true}`
+    `SELECT COUNT(*) AS total FROM collections
+     WHERE isPublic = ${true} ${searchClause}`,
+    search ? [searchTerm, searchTerm] : []
   );
   return { data, total: countRow.total, page, limit };
 };
@@ -79,18 +89,26 @@ export const getOneWithContent = async (id) => {
 //get users all public collections (list)
 export const getAll = async (user, pagination = {}) => {
   const userid = user.id;
-  const { page, limit } = pagination;
+  const { page, limit, search } = pagination;
   const isPaged = page != null && limit != null;
-  const limitClause = isPaged ? `LIMIT ? OFFSET ?` : "";
-  const params = isPaged ? [limit, (page - 1) * limit] : [];
+
+  const searchClause = search
+    ? `AND (LOWER(name) LIKE LOWER(?) OR LOWER(note) LIKE LOWER(?))`
+    : "";
+  const searchTerm = search ? `%${search}%` : null;
+  const params = [
+    ...(search ? [searchTerm, searchTerm] : []),
+    ...(isPaged ? [limit, (page - 1) * limit] : []),
+  ];
 
   const rows = await db_all(
     `SELECT *,
       CASE WHEN userid = ${userid} THEN 1 ELSE 0 END AS isMy
     FROM collections
     WHERE isPublic = ${true}
+    ${searchClause}
     ORDER BY name COLLATE NOCASE ASC
-    ${limitClause}`,
+    ${isPaged ? "LIMIT ? OFFSET ?" : ""}`,
     params
   );
 
@@ -103,7 +121,9 @@ export const getAll = async (user, pagination = {}) => {
   if (!isPaged) return data;
 
   const countRow = await db_get(
-    `SELECT COUNT(*) AS total FROM collections WHERE isPublic = ${true}`
+    `SELECT COUNT(*) AS total FROM collections
+     WHERE isPublic = ${true} ${searchClause}`,
+    search ? [searchTerm, searchTerm] : []
   );
   return { data, total: countRow.total, page, limit };
 };
