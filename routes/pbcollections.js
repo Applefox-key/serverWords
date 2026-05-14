@@ -13,10 +13,17 @@ app.use(bodyParser.json());
 //ONLY COLLECTIONS  all pbcollections
 router.get("/", async (req, res, next) => {
   try {
-    let list = await pbcol.getAll(req.user);
-    res
-      .status(!list ? 400 : 200)
-      .json(!list ? { error: "session not found" } : { data: list });
+    const pagination = {};
+    if (req.query.page != null && req.query.limit != null) {
+      pagination.page = Math.max(1, parseInt(req.query.page) || 1);
+      pagination.limit = Math.max(1, parseInt(req.query.limit) || 20);
+    }
+    const result = await pbcol.getAll(req.user, pagination);
+    if (Array.isArray(result)) {
+      res.status(200).json({ data: result });
+    } else {
+      res.status(200).json(result);
+    }
   } catch (error) {
     sendError(res, error.message);
   }
@@ -37,10 +44,18 @@ router.get("/content", async (req, res, next) => {
 //COLLECTIONS AND CONTENT all
 router.get("/count", async (req, res, next) => {
   try {
-    let list = await pbcol.getAllWithCount();
-    if (!list) return sendError(res, "session not found");
-
-    sendResponse(res, list);
+    const pagination = {};
+    if (req.query.page != null && req.query.limit != null) {
+      pagination.page = Math.max(1, parseInt(req.query.page) || 1);
+      pagination.limit = Math.max(1, parseInt(req.query.limit) || 20);
+    }
+    const result = await pbcol.getAllWithCount(pagination);
+    if (!result) return sendError(res, "session not found");
+    if (Array.isArray(result)) {
+      sendResponse(res, result);
+    } else {
+      res.status(200).json(result);
+    }
   } catch (error) {
     sendError(res, error.message);
   }

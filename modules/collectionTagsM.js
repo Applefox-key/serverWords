@@ -51,18 +51,29 @@ export const setCollectionTags = async (collectionId, tagIds) => {
   return await db_run(`INSERT INTO collections_to_tags (collectionid, tagid) VALUES ${placeholders}`, values);
 };
 
-// Get all collections with their tags for a user (used to enrich getAll response)
-export const getTagsForCollections = async (user) => {
-  const rows = await db_all(
-    `SELECT ctt.collectionid, ct.id, ct.name
-     FROM collections_to_tags ctt
-     JOIN collection_tags ct ON ct.id = ctt.tagid
-     JOIN collections c ON c.id = ctt.collectionid
-     WHERE c.userid = ?`,
-    [user.id],
-  );
+// Get all collections with their tags for a user (used to enrich getAll response).
+// Pass ids array to restrict to a specific page of collection IDs.
+export const getTagsForCollections = async (user, ids = null) => {
+  if (ids !== null && ids.length === 0) return {};
 
-  // Group by collectionid → { [collectionid]: [{ id, name }] }
+  let query, params;
+  if (ids) {
+    const placeholders = ids.map(() => "?").join(",");
+    query = `SELECT ctt.collectionid, ct.id, ct.name
+             FROM collections_to_tags ctt
+             JOIN collection_tags ct ON ct.id = ctt.tagid
+             WHERE ctt.collectionid IN (${placeholders})`;
+    params = ids;
+  } else {
+    query = `SELECT ctt.collectionid, ct.id, ct.name
+             FROM collections_to_tags ctt
+             JOIN collection_tags ct ON ct.id = ctt.tagid
+             JOIN collections c ON c.id = ctt.collectionid
+             WHERE c.userid = ?`;
+    params = [user.id];
+  }
+
+  const rows = await db_all(query, params);
   const map = {};
   for (const row of rows) {
     if (!map[row.collectionid]) map[row.collectionid] = [];
@@ -71,14 +82,27 @@ export const getTagsForCollections = async (user) => {
   return map;
 };
 
-export const getTagsForPublicCollections = async () => {
-  const rows = await db_all(
-    `SELECT ctt.collectionid, ct.id, ct.name
-     FROM collections_to_tags ctt
-     JOIN collection_tags ct ON ct.id = ctt.tagid
-     JOIN collections c ON c.id = ctt.collectionid
-     WHERE c.isPublic = 1`,
-  );
+export const getTagsForPublicCollections = async (ids = null) => {
+  if (ids !== null && ids.length === 0) return {};
+
+  let query, params;
+  if (ids) {
+    const placeholders = ids.map(() => "?").join(",");
+    query = `SELECT ctt.collectionid, ct.id, ct.name
+             FROM collections_to_tags ctt
+             JOIN collection_tags ct ON ct.id = ctt.tagid
+             WHERE ctt.collectionid IN (${placeholders})`;
+    params = ids;
+  } else {
+    query = `SELECT ctt.collectionid, ct.id, ct.name
+             FROM collections_to_tags ctt
+             JOIN collection_tags ct ON ct.id = ctt.tagid
+             JOIN collections c ON c.id = ctt.collectionid
+             WHERE c.isPublic = 1`;
+    params = [];
+  }
+
+  const rows = await db_all(query, params);
   const map = {};
   for (const row of rows) {
     if (!map[row.collectionid]) map[row.collectionid] = [];

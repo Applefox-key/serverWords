@@ -21,23 +21,38 @@ export const getAllWithContent = async () => {
   return rows.map(row => ({ ...row, collectionTags: tagsMap[row.id] ?? [] }));
 };
 //get  all collections with count of cards
-export const getAllWithCount = async () => {
+export const getAllWithCount = async (pagination = {}) => {
+  const { page, limit } = pagination;
+  const isPaged = page != null && limit != null;
+  const limitClause = isPaged ? `LIMIT ? OFFSET ?` : "";
+  const params = isPaged ? [limit, (page - 1) * limit] : [];
+
   const rows = await db_all(
-    `SELECT collections.id, collections.name AS name, collections.note, isPublic, isFavorite, categoryid, 
-      categories.name AS category,  
+    `SELECT collections.id, collections.name AS name, collections.note, isPublic, isFavorite, categoryid,
+      categories.name AS category,
       COUNT(content.id) AS content_count
-       FROM collections  
+       FROM collections
        LEFT JOIN content ON collections.id = content.collectionid
        LEFT JOIN categories ON collections.categoryid = categories.id
        WHERE isPublic = ${true}
        GROUP BY collections.id
-       ORDER BY categories.name COLLATE NOCASE ASC, collections.name COLLATE NOCASE ASC;
-       `
+       ORDER BY categories.name COLLATE NOCASE ASC, collections.name COLLATE NOCASE ASC
+       ${limitClause}`,
+    params
   );
 
-  if (!rows) return [];
-  const tagsMap = await getTagsForPublicCollections();
-  return rows.map(row => ({ ...row, tags: tagsMap[row.id] ?? [] }));
+  if (!rows) return isPaged ? { data: [], total: 0, page, limit } : [];
+
+  const ids = rows.map((r) => r.id);
+  const tagsMap = await getTagsForPublicCollections(isPaged ? ids : null);
+  const data = rows.map((row) => ({ ...row, tags: tagsMap[row.id] ?? [] }));
+
+  if (!isPaged) return data;
+
+  const countRow = await db_get(
+    `SELECT COUNT(*) AS total FROM collections WHERE isPublic = ${true}`
+  );
+  return { data, total: countRow.total, page, limit };
 };
 //get  one collection with content
 export const getOneWithContent = async (id) => {
@@ -62,18 +77,35 @@ export const getOneWithContent = async (id) => {
 };
 
 //get users all public collections (list)
-export const getAll = async (user) => {
+export const getAll = async (user, pagination = {}) => {
   const userid = user.id;
-  const rows = await db_all(`
-  SELECT *,
-    CASE WHEN userid = ${userid} THEN 1 ELSE 0 END AS isMy
-  FROM collections
-  WHERE isPublic = ${true}
-`);
+  const { page, limit } = pagination;
+  const isPaged = page != null && limit != null;
+  const limitClause = isPaged ? `LIMIT ? OFFSET ?` : "";
+  const params = isPaged ? [limit, (page - 1) * limit] : [];
 
-  if (!rows) return [];
-  const tagsMap = await getTagsForPublicCollections();
-  return rows.map(row => ({ ...row, tags: tagsMap[row.id] ?? [] }));
+  const rows = await db_all(
+    `SELECT *,
+      CASE WHEN userid = ${userid} THEN 1 ELSE 0 END AS isMy
+    FROM collections
+    WHERE isPublic = ${true}
+    ORDER BY name COLLATE NOCASE ASC
+    ${limitClause}`,
+    params
+  );
+
+  if (!rows) return isPaged ? { data: [], total: 0, page, limit } : [];
+
+  const ids = rows.map((r) => r.id);
+  const tagsMap = await getTagsForPublicCollections(isPaged ? ids : null);
+  const data = rows.map((row) => ({ ...row, tags: tagsMap[row.id] ?? [] }));
+
+  if (!isPaged) return data;
+
+  const countRow = await db_get(
+    `SELECT COUNT(*) AS total FROM collections WHERE isPublic = ${true}`
+  );
+  return { data, total: countRow.total, page, limit };
 };
 
 //get one collection by id

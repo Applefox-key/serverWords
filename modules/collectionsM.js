@@ -25,8 +25,13 @@ export const getByID_forImg = async (id) => {
   }
 };
 //get users all collections without content
-export const getAll = async (user) => {
+export const getAll = async (user, pagination = {}) => {
   const userid = user.id;
+  const { page, limit } = pagination;
+  const isPaged = page != null && limit != null;
+  const limitClause = isPaged ? `LIMIT ? OFFSET ?` : "";
+  const params = isPaged ? [limit, (page - 1) * limit] : [];
+
   const rows = await db_all(
     `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, isFavorite,
     categories.name AS category,
@@ -39,15 +44,25 @@ export const getAll = async (user) => {
     ON collections.categoryid = categories.id
     WHERE collections.userid = ${userid}
     ORDER BY collections.name COLLATE NOCASE ASC
-    `
+    ${limitClause}`,
+    params
   );
-  if (!rows) return [];
-  const tagsMap = await getTagsForCollections(user);
-  return rows.map(({ avgRate, toLearn, inProgress, learned, ...row }) => ({
+  if (!rows) return isPaged ? { data: [], total: 0, page, limit } : [];
+
+  const ids = rows.map((r) => r.id);
+  const tagsMap = await getTagsForCollections(user, isPaged ? ids : null);
+  const data = rows.map(({ avgRate, toLearn, inProgress, learned, ...row }) => ({
     ...row,
     tags: tagsMap[row.id] ?? [],
     stats: { avgRate, toLearn, inProgress, learned },
   }));
+
+  if (!isPaged) return data;
+
+  const countRow = await db_get(
+    `SELECT COUNT(*) AS total FROM collections WHERE userid = ${userid}`
+  );
+  return { data, total: countRow.total, page, limit };
 };
 export const deleteAll = async (user) => {
   const userid = user.id;

@@ -192,10 +192,17 @@ router.post("/copy", async (req, res, next) => {
 //Get user's all collections
 router.get("/", async (req, res, next) => {
   try {
-    let list = await col.getAll(req.user);
-    res
-      .status(!list ? 400 : 200)
-      .json(!list ? { error: "session not found" } : { data: list });
+    const pagination = {};
+    if (req.query.page != null && req.query.limit != null) {
+      pagination.page = Math.max(1, parseInt(req.query.page) || 1);
+      pagination.limit = Math.max(1, parseInt(req.query.limit) || 20);
+    }
+    const result = await col.getAll(req.user, pagination);
+    if (Array.isArray(result)) {
+      res.status(200).json({ data: result });
+    } else {
+      res.status(200).json(result);
+    }
   } catch (error) {
     sendError(res, error.message);
   }
