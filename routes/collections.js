@@ -198,27 +198,14 @@ router.get("/", async (req, res, next) => {
       pagination.limit = Math.max(1, parseInt(req.query.limit) || 20);
     }
     if (req.query.search?.trim()) pagination.search = req.query.search.trim();
+    if (req.query.isFavorite) pagination.isFavorite = true;
+    if (req.query.isPublic) pagination.isPublic = true;
     const result = await col.getAll(req.user, pagination);
     if (Array.isArray(result)) {
       res.status(200).json({ data: result });
     } else {
       res.status(200).json(result);
     }
-  } catch (error) {
-    sendError(res, error.message);
-  }
-});
-
-//Get user's all collections
-router.get("/favorite", async (req, res, next) => {
-  let prop = { isFavorite: true };
-  if (req.query.hasOwnProperty("isPublic")) prop.isPublic = "1";
-  try {
-    let result = await common.getAllWithContent(req.user, prop);
-    let resArr = formatCollectionContent(req.user, result);
-    res
-      .status(!resArr ? 400 : 200)
-      .json(!resArr ? { error: "session not found" } : { data: resArr });
   } catch (error) {
     sendError(res, error.message);
   }

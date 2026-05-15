@@ -27,8 +27,13 @@ export const getByID_forImg = async (id) => {
 //get users all collections without content
 export const getAll = async (user, pagination = {}) => {
   const userid = user.id;
-  const { page, limit, search } = pagination;
+  const { page, limit, search, isFavorite, isPublic } = pagination;
   const isPaged = page != null && limit != null;
+
+  const filterClauses = [
+    isFavorite ? `AND isFavorite = ${true}` : "",
+    isPublic ? `AND isPublic = ${true}` : "",
+  ].join(" ");
 
   const searchClause = search
     ? `AND (LOWER(collections.name) LIKE LOWER(?) OR LOWER(collections.note) LIKE LOWER(?))`
@@ -49,6 +54,7 @@ export const getAll = async (user, pagination = {}) => {
     FROM collections
     LEFT JOIN categories ON collections.categoryid = categories.id
     WHERE collections.userid = ${userid}
+    ${filterClauses}
     ${searchClause}
     ORDER BY collections.name COLLATE NOCASE ASC
     ${isPaged ? "LIMIT ? OFFSET ?" : ""}`,
@@ -68,11 +74,12 @@ export const getAll = async (user, pagination = {}) => {
 
   const countRow = await db_get(
     `SELECT COUNT(*) AS total FROM collections
-     WHERE userid = ${userid} ${searchClause}`,
+     WHERE userid = ${userid} ${filterClauses} ${searchClause}`,
     search ? [searchTerm, searchTerm] : []
   );
   return { data, total: countRow.total, page, limit };
 };
+
 export const deleteAll = async (user) => {
   const userid = user.id;
   return await db_all(
