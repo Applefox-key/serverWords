@@ -200,6 +200,7 @@ router.get("/", async (req, res, next) => {
     if (req.query.search?.trim()) pagination.search = req.query.search.trim();
     if (req.query.isFavorite) pagination.isFavorite = true;
     if (req.query.isPublic) pagination.isPublic = true;
+    if (req.query.tagId) pagination.tagId = parseInt(req.query.tagId);
     const result = await col.getAll(req.user, pagination);
     if (Array.isArray(result)) {
       res.status(200).json({ data: result });

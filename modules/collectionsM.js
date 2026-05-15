@@ -27,8 +27,12 @@ export const getByID_forImg = async (id) => {
 //get users all collections without content
 export const getAll = async (user, pagination = {}) => {
   const userid = user.id;
-  const { page, limit, search, isFavorite, isPublic } = pagination;
+  const { page, limit, search, isFavorite, isPublic, tagId } = pagination;
   const isPaged = page != null && limit != null;
+
+  const tagJoin = tagId
+    ? `JOIN collections_to_tags ctt ON ctt.collectionid = collections.id AND ctt.tagid = ?`
+    : "";
 
   const filterClauses = [
     isFavorite ? `AND isFavorite = ${true}` : "",
@@ -40,6 +44,7 @@ export const getAll = async (user, pagination = {}) => {
     : "";
   const searchTerm = search ? `%${search}%` : null;
   const params = [
+    ...(tagId ? [tagId] : []),
     ...(search ? [searchTerm, searchTerm] : []),
     ...(isPaged ? [limit, (page - 1) * limit] : []),
   ];
@@ -52,6 +57,7 @@ export const getAll = async (user, pagination = {}) => {
     (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate >= 2 AND rate <= 3) AS inProgress,
     (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate >= 4) AS learned
     FROM collections
+    ${tagJoin}
     LEFT JOIN categories ON collections.categoryid = categories.id
     WHERE collections.userid = ${userid}
     ${filterClauses}
@@ -74,8 +80,12 @@ export const getAll = async (user, pagination = {}) => {
 
   const countRow = await db_get(
     `SELECT COUNT(*) AS total FROM collections
+     ${tagJoin}
      WHERE userid = ${userid} ${filterClauses} ${searchClause}`,
-    search ? [searchTerm, searchTerm] : []
+    [
+      ...(tagId ? [tagId] : []),
+      ...(search ? [searchTerm, searchTerm] : []),
+    ]
   );
   return { data, total: countRow.total, page, limit };
 };
