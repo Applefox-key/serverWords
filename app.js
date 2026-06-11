@@ -26,11 +26,12 @@ process.env.TZ = "Etc/Universal"; // UTC +00:00
 app.use(
   cors({
     origin: [
-      "https://flashcards.learnapp.pro",
-      "https://phrases.learnapp.pro",
-      "https://phrasely.learnapp.pro",
-      "https://tracker.learnapp.pro",
-      "https://learnapp.pro",
+      "https://flashcards.learnypie.com",
+      "https://flashcardsold.learnypie.com",
+      "https://phrases.learnypie.com",
+      "https://phrasely.learnypie.com",
+      "https://tracker.learnypie.com",
+      "https://learnypie.com",
       "http://localhost:5173",
       "http://localhost:5174",
       "http://localhost:3000",

@@ -12,11 +12,11 @@ const getOAuthClient = () =>
   new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI);
 
 const ALLOWED_REDIRECTS = [
-  "https://phrasely.learnapp.pro",
-  "https://flashcards.learnapp.pro",
-  "https://phrases.learnapp.pro",
-  "https://tracker.learnapp.pro",
-  "https://learnapp.pro",
+  "https://phrasely.learnypie.com",
+  "https://flashcards.learnypie.com",
+  "https://phrases.learnypie.com",
+  "https://tracker.learnypie.com",
+  "https://learnypie.com",
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:3000",
@@ -123,7 +123,7 @@ router.post("/login", async (req, res, next) => {
         httpOnly: true,
         secure: isProd,
         sameSite: "lax",
-        domain: isProd ? ".learnapp.pro" : undefined,
+        domain: isProd ? ".learnypie.com" : undefined,
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
     }
@@ -145,7 +145,7 @@ router.delete("/logout", async (req, res, next) => {
     // Clear the shared cookie
     const isProd = process.env.NODE_ENV === "production";
     res.clearCookie("learnapp_token", {
-      domain: isProd ? ".learnapp.pro" : undefined,
+      domain: isProd ? ".learnypie.com" : undefined,
     });
 
     sendResult(res, result);
@@ -269,7 +269,7 @@ router.get("/auth/google/callback", async (req, res) => {
       httpOnly: true,
       secure: isProd,
       sameSite: "lax",
-      domain: isProd ? ".learnapp.pro" : undefined,
+      domain: isProd ? ".learnypie.com" : undefined,
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
