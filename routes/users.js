@@ -228,7 +228,8 @@ router.patch("/byadmin", async (req, res, next) => {
   }
 });
 router.get("/auth/google", (req, res) => {
-  const redirect = (req.query.redirect || process.env.FRONTEND_URL || ALLOWED_REDIRECTS[0]).replace(/\/$/, "");
+  if (!req.query.redirect) return res.status(400).json({ error: "redirect is required" });
+  const redirect = req.query.redirect.replace(/\/$/, "");
   if (!ALLOWED_REDIRECTS.includes(redirect)) {
     return res.status(400).json({ error: "invalid redirect" });
   }
@@ -243,8 +244,8 @@ router.get("/auth/google", (req, res) => {
 
 router.get("/auth/google/callback", async (req, res) => {
   console.log("Google callback hit", req.query);
-  const fallback = process.env.FRONTEND_URL || "http://localhost:5173";
-  const redirectTo = req.query.state ? Buffer.from(req.query.state, "base64").toString() : fallback;
+  if (!req.query.state) return res.status(400).json({ error: "missing state" });
+  const redirectTo = Buffer.from(req.query.state, "base64").toString();
 
   try {
     const { code } = req.query;
