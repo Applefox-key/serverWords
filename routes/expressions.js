@@ -59,7 +59,7 @@ router.delete("/some", async (req, res, next) => {
   try {
     let list = req.body?.data?.list ?? req.body?.list;
     let result = await exp.deleteSomeExpressions(req.user, list);
-    sendResult(req, result);
+    sendResult(res, result);
   } catch (error) {
     sendError(res, error.message);
   }
