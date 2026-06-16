@@ -57,7 +57,7 @@ router.delete("/", async (req, res, next) => {
 //all by userid and ids array
 router.delete("/some", async (req, res, next) => {
   try {
-    let list = req.body.data.list;
+    let list = req.body?.data?.list ?? req.body?.list;
     let result = await exp.deleteSomeExpressions(req.user, list);
     sendResult(req, result);
   } catch (error) {
