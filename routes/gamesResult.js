@@ -6,7 +6,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 import db from "../database.js";
 import { db_all, db_run } from "../helpers/dbAsync.js";
-import { sendError } from "../helpers/responseHelpers.js";
+import { sendError, sendOk } from "../helpers/responseHelpers.js";
 // `CREATE TABLE gamesResult (
 //   id INTEGER PRIMARY KEY AUTOINCREMENT,
 //   contentid INTEGER,
@@ -16,10 +16,7 @@ import { sendError } from "../helpers/responseHelpers.js";
 //   ON DELETE CASCADE ON UPDATE NO ACTION,
 //   FOREIGN KEY(userid) REFERENCES users(id)
 //   ON DELETE CASCADE ON UPDATE NO ACTION)`,
-const getListByIds = async (listIds) => {
-  //`SELECT * FROM gamesResult WHERE userid = ? AND AND id IN (${placeholders})`,
-  const userid = req.user.id;
-  // SELECT by ids
+const getListByIds = async (listIds, userid) => {
   const query = `SELECT * FROM gamesResult WHERE userid = ? AND contentid IN (${listIds})`;
   const params = [userid];
   let result = await db_all(query, params);
@@ -27,10 +24,8 @@ const getListByIds = async (listIds) => {
   return result;
 };
 
-const getListByIdsAndGame = async (listIds, game = "") => {
-  //`SELECT * FROM gamesResult WHERE userid = ? AND AND id IN (${placeholders})`,
-  // SELECT by ids
-  let resultIds = await getListByIds(listIds);
+const getListByIdsAndGame = async (listIds, game = "", userid) => {
+  let resultIds = await getListByIds(listIds, userid);
   if (!game) return resultIds;
   const probabilitiesObject = {};
   resultIds.forEach((row) => {
@@ -72,8 +67,9 @@ const editProb = async (id, prob, userid) => {
 router.post("/get", async (req, res) => {
   let listid = req.body.data.listid;
   let game = req.body.data.game;
+  const userid = req.user.id;
   try {
-    let list = await getListByIdsAndGame(listid, game);
+    let list = await getListByIdsAndGame(listid, game, userid);
     res
       .status(!list ? 400 : 200)
       .json(!list ? { error: "session not found" } : { data: list });
@@ -83,46 +79,45 @@ router.post("/get", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  let newProb = JSON.parse(req.body.data.newProb);
-  const userid = req.user.id;
-  let errorOccurred = false;
+  try {
+    const rawProb = req.body.data.newProb;
+    let newProb = typeof rawProb === "string" ? JSON.parse(rawProb) : rawProb;
+    const userid = req.user.id;
+    let errorOccurred = false;
 
-  const rowArr = await getListByIds(Object.keys(newProb));
+    const rowArr = await getListByIds(Object.keys(newProb), userid);
 
-  for (const element of rowArr) {
-    let contentid = element.contentid;
-    let newPr = {
-      ...JSON.parse(element.probability),
-      ...newProb[element.contentid],
-    };
-    const resultUpd = await editProb(contentid, newPr, userid);
-    delete newProb[contentid];
-    if (resultUpd.error) {
-      console.error(resultUpd.error.message);
-      db.run("ROLLBACK");
-      errorOccurred = true;
-      return;
+    for (const element of rowArr) {
+      let contentid = element.contentid;
+      let newPr = {
+        ...JSON.parse(element.probability),
+        ...newProb[element.contentid],
+      };
+      const resultUpd = await editProb(contentid, newPr, userid);
+      delete newProb[contentid];
+      if (resultUpd.error) {
+        console.error(resultUpd.error.message);
+        db.run("ROLLBACK");
+        errorOccurred = true;
+        break;
+      }
     }
-  }
 
-  for (const contid of Object.keys(newProb)) {
-    let contentid = contid;
-    let resultNew = await createNew(
-      req.user,
-      contentid,
-      newProb[contentid],
-      userid
-    );
-    if (resultNew.error) {
-      console.error(resultNew.error.message);
-      db.run("ROLLBACK");
-      errorOccurred = true;
-      return;
+    for (const contid of Object.keys(newProb)) {
+      let resultNew = await createNew(contid, newProb[contid], userid);
+      if (resultNew.error) {
+        console.error(resultNew.error.message);
+        db.run("ROLLBACK");
+        errorOccurred = true;
+        break;
+      }
     }
+
+    if (errorOccurred) {
+      sendError(res, "An error occurred");
+    } else sendOk(res, "Probabilities updated/created successfully");
+  } catch (error) {
+    sendError(res, error.message);
   }
-  console.log(errorOccurred);
-  if (errorOccurred) {
-    sendError(res, "An error occurred");
-  } else sendOk(res, "Probabilities updated/created successfully");
 });
 export default router;

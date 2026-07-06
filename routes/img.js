@@ -62,6 +62,8 @@ router.get("/avatars", (req, res) => {
     filename.toString()
   );
 
-  res.sendFile(userFolderPath);
+  res.sendFile(userFolderPath, (err) => {
+    if (err) res.status(404).end();
+  });
 });
 export default router;
