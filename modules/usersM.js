@@ -136,7 +136,7 @@ export const createUser = async (set) => {
         set.email,
         set.password,
         img,
-        set.role ? statusbar.role : "user",
+        set.role || "user",
         JSON.stringify(set.settings),
       ]
     );

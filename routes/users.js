@@ -58,7 +58,21 @@ router.post("/", async (req, res, next) => {
     };
 
     let result = await usr.createUser(data);
-    sendResult(res, result);
+    if (result.error) {
+      sendError(res, result.error);
+      return;
+    }
+    const newUser = await usr.getUserByEmail(data.email);
+    const token = await usr.createToken(newUser.id, newUser.role);
+    const isProd = process.env.NODE_ENV === "production";
+    res.cookie("learnapp_token", token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "lax",
+      domain: isProd ? ".learnypie.com" : undefined,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+    res.status(200).json({ token, role: newUser.role });
   } catch (error) {
     sendError(res, error.message);
   }

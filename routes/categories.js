@@ -75,6 +75,7 @@ router.get("/public/collections", async (req, res, next) => {
 router.post("/user", async (req, res, next) => {
   try {
     let result = await categ.createUserCategory(req.user, req.body.data.name);
+    if (!result) return sendError(res, "Failed to create category");
     sendResult(res, result);
   } catch (error) {
     sendError(res, error.message);

@@ -161,15 +161,10 @@ export const createUserCategory = async (user, name) => {
   const userid = user.id;
   let categ = await getCategoryByName(user, name);
 
-  if (categ)
-    return categ
-      ? { id: categ.id }
-      : { error: `category with name ${name} is already exist` };
+  if (categ) return { id: categ.id };
 
-  return await db_get(
-    `INSERT INTO categories (name, userid) VALUES (?,?)  RETURNING id`,
-    [name, userid]
-  );
+  await db_run(`INSERT INTO categories (name, userid) VALUES (?,?)`, [name, userid]);
+  return await getCategoryByName(user, name);
 };
 
 //edit category's name
