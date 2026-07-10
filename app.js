@@ -104,7 +104,9 @@ export async function autorisation(req, res, next) {
   if (!userRow) return sendError(res, "User's not found. Please relogin!", 403);
   req.user = userRow;
   req.token = token;
-  if (req.user && req.user.role !== "admin") await runDailyQueueUpdate(userRow);
+  if (req.user && req.user.role !== "admin") {
+    try { await runDailyQueueUpdate(userRow); } catch (e) { console.error("runDailyQueueUpdate error:", e.message); }
+  }
   next();
 }
 export function unless(middleware, ...paths) {
@@ -117,7 +119,7 @@ export function unless(middleware, ...paths) {
     } catch (error) {}
 
     const pathCheck = paths.some((path) => path === req.method + req.path);
-    pathCheck ? next() : await middleware(req, res, next);
+    if (pathCheck) { next(); } else { try { await middleware(req, res, next); } catch (e) { next(e); } }
   };
 }
 export default app;

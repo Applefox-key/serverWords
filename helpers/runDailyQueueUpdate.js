@@ -5,7 +5,12 @@ import { db_all } from "./dbAsync.js";
 
 export async function runDailyQueueUpdate(user) {
   if (!user) return;
-  const settings = user.settings ? JSON.parse(user.settings) : {};
+  let settings;
+  try {
+    settings = user.settings ? (typeof user.settings === "object" ? user.settings : JSON.parse(user.settings)) : {};
+  } catch {
+    return;
+  }
   const limit = settings.dailyQueueLimit || 0;
 
   if (!limit) return;
