@@ -181,3 +181,11 @@ export const updateUserField = async (userid, field, value) => {
   const sql = `UPDATE users SET ${field} = ? WHERE id = ?`;
   return await db_run(sql, [value, userid]);
 };
+
+export const mergeUserSettings = async (userid, partialSettings) => {
+  const patch = JSON.stringify(partialSettings);
+  return await db_run(
+    `UPDATE users SET settings = json_patch(COALESCE(settings, '{}'), ?) WHERE id = ?`,
+    [patch, userid]
+  );
+};

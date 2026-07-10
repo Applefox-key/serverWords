@@ -295,5 +295,23 @@ router.get("/auth/google/callback", async (req, res) => {
   }
 });
 
+// PATCH /users/settings — json_patch merge of partial settings object
+router.patch("/settings", async (req, res) => {
+  try {
+    const partial = req.body.data;
+    if (!partial || typeof partial !== "object" || Array.isArray(partial)) {
+      return sendError(res, "data must be a non-array object");
+    }
+    await usr.mergeUserSettings(req.user.id, partial);
+    const updated = await usr.getUserById(req.user.id);
+    const parsedSettings = updated.settings
+      ? (typeof updated.settings === "string" ? JSON.parse(updated.settings) : updated.settings)
+      : {};
+    res.status(200).json({ settings: parsedSettings });
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
 // module.exports = router;
 export default router;
