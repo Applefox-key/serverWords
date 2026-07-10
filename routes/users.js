@@ -230,7 +230,7 @@ router.patch("/byadmin", async (req, res, next) => {
       img: req.body.data.img,
       email: req.body.data.email,
       password: req.body.data.password ? md5(req.body.data.password) : null,
-      settings: JSON.parse(req.body.data.settings),
+      settings: typeof req.body.data.settings === "string" ? JSON.parse(req.body.data.settings) : req.body.data.settings,
     };
 
     console.log(`by admin user ${userid}`);

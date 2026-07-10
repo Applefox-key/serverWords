@@ -11,20 +11,18 @@ export async function runDailyQueueUpdate(user) {
   } catch {
     return;
   }
-  const limit = settings.dailyQueueLimit || 0;
+  const phrases = settings.phrases ?? {};
+  const limit = phrases.dailyQueueLimit || 0;
 
   if (!limit) return;
-  // return;
   const now = DateTime.utc();
 
-  let lastUpdate = null;
-
-  if (settings.lastQueueUpdate) {
-    lastUpdate = DateTime.fromISO(settings.lastQueueUpdate, { zone: "utc" });
+  if (phrases.lastQueueUpdate) {
+    const lastUpdate = DateTime.fromISO(phrases.lastQueueUpdate, { zone: "utc" });
     const hoursSince = now.diff(lastUpdate, "hours").hours;
-    if (hoursSince < 24) return; // 24 hours have not passed — we are leaving
+    if (hoursSince < 24) return;
   }
-  // 1.get first N items by id, which inQueue = 1
+
   const expressions = await db_all(
     `SELECT * FROM expressions WHERE userid = ? AND inQueue = 1 ORDER BY id ASC LIMIT ?`,
     [user.id, limit],
@@ -34,6 +32,6 @@ export async function runDailyQueueUpdate(user) {
     await activateExpressionFromQueue(user, expr);
   }
 
-  settings.lastQueueUpdate = now.toISO();
+  settings.phrases = { ...phrases, lastQueueUpdate: now.toISO() };
   await updateUserField(user.id, "settings", JSON.stringify(settings));
 }
