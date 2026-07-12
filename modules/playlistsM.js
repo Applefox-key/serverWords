@@ -120,7 +120,7 @@ export const getListAll = async (user) => {
 
 export const getContentById = async (user, id) => {
   const query = `
-    SELECT c.id, c.question, c.answer, c.note, c.imgA, c.imgQ, col.id AS collectionid, col.name AS collectionname
+    SELECT c.id, c.question, c.answer, c.note, c.imgA, c.imgQ, c.rate, col.id AS collectionid, col.name AS collectionname
     FROM content c
     JOIN collections col ON c.collectionid = col.id
     JOIN playlistsItems pi ON col.id = pi.collectionid
