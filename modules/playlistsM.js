@@ -190,7 +190,7 @@ export const edit = async (user, name, listIds = null, id) => {
     }
   }
 
-  return;
+  return {};
 };
 //delete users one playlist
 export const deleteOne = async (id) => {
