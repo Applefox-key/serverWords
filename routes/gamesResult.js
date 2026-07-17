@@ -148,4 +148,107 @@ router.post("/", async (req, res) => {
     sendError(res, error.message);
   }
 });
+// DELETE /collection/:collectionid — reset all stats for entire collection
+router.delete("/collection/:collectionid", async (req, res) => {
+  const collectionid = parseInt(req.params.collectionid);
+  const userid = req.user.id;
+  try {
+    const contentRows = await db_all(
+      "SELECT id FROM content WHERE collectionid = ?",
+      [collectionid]
+    );
+    if (!contentRows.length) return sendOk(res, "Nothing to reset");
+    const ids = contentRows.map((r) => r.id).join(",");
+    await db_run(
+      `DELETE FROM gamesResult WHERE userid = ? AND contentid IN (${ids})`,
+      [userid]
+    );
+    sendOk(res, "Statistics reset");
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
+// DELETE /collection/:collectionid/mode/:mode — reset specific game mode for collection
+router.delete("/collection/:collectionid/mode/:mode", async (req, res) => {
+  const collectionid = parseInt(req.params.collectionid);
+  const mode = req.params.mode;
+  const userid = req.user.id;
+  try {
+    const contentRows = await db_all(
+      "SELECT id FROM content WHERE collectionid = ?",
+      [collectionid]
+    );
+    if (!contentRows.length) return sendOk(res, "Nothing to reset");
+    const ids = contentRows.map((r) => r.id).join(",");
+    const rows = await db_all(
+      `SELECT contentid, probability FROM gamesResult WHERE userid = ? AND contentid IN (${ids})`,
+      [userid]
+    );
+    for (const row of rows) {
+      const prob = JSON.parse(row.probability);
+      delete prob[mode];
+      if (Object.keys(prob).length === 0) {
+        await db_run(
+          `DELETE FROM gamesResult WHERE contentid = ? AND userid = ?`,
+          [row.contentid, userid]
+        );
+      } else {
+        await db_run(
+          `UPDATE gamesResult SET probability = ? WHERE contentid = ? AND userid = ?`,
+          [JSON.stringify(prob), row.contentid, userid]
+        );
+      }
+    }
+    sendOk(res, "Statistics reset");
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
+// DELETE /card/:contentid — reset all stats for a single card
+router.delete("/card/:contentid", async (req, res) => {
+  const contentid = parseInt(req.params.contentid);
+  const userid = req.user.id;
+  try {
+    await db_run(
+      `DELETE FROM gamesResult WHERE contentid = ? AND userid = ?`,
+      [contentid, userid]
+    );
+    sendOk(res, "Statistics reset");
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
+// DELETE /card/:contentid/mode/:mode — reset specific game mode for a single card
+router.delete("/card/:contentid/mode/:mode", async (req, res) => {
+  const contentid = parseInt(req.params.contentid);
+  const mode = req.params.mode;
+  const userid = req.user.id;
+  try {
+    const rows = await db_all(
+      `SELECT probability FROM gamesResult WHERE contentid = ? AND userid = ?`,
+      [contentid, userid]
+    );
+    if (!rows.length) return sendOk(res, "Nothing to reset");
+    const prob = JSON.parse(rows[0].probability);
+    delete prob[mode];
+    if (Object.keys(prob).length === 0) {
+      await db_run(
+        `DELETE FROM gamesResult WHERE contentid = ? AND userid = ?`,
+        [contentid, userid]
+      );
+    } else {
+      await db_run(
+        `UPDATE gamesResult SET probability = ? WHERE contentid = ? AND userid = ?`,
+        [JSON.stringify(prob), contentid, userid]
+      );
+    }
+    sendOk(res, "Statistics reset");
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
 export default router;
