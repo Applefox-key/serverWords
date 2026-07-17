@@ -44,10 +44,14 @@ export function applyReview(entry, grade, mode) {
   };
 }
 
-export function easeToMastery(easeFactor) {
-  if (easeFactor < 1.6) return 1;
-  if (easeFactor < 1.9) return 2;
-  if (easeFactor < 2.2) return 3;
-  if (easeFactor < 2.5) return 4;
-  return 5;
+const REP_CAP = [0, 2, 3, 4, 5]; // max mastery achievable at repetitions 0–4+
+
+export function easeToMastery(easeFactor, repetitions) {
+  if (!repetitions) return null;
+  const fromEase = easeFactor < 1.6 ? 1
+    : easeFactor < 1.9 ? 2
+    : easeFactor < 2.2 ? 3
+    : easeFactor < 2.5 ? 4
+    : 5;
+  return Math.min(fromEase, REP_CAP[Math.min(repetitions, 4)]);
 }
