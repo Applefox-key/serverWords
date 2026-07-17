@@ -11,7 +11,7 @@ export const getAll = async (user) => {
   return rows.map(row => ({
     ...row,
     tags: tagsMap[row.id] ?? [],
-    mastery_level: easeToMastery(row.ease_factor ?? 2.5),
+    mastery_level: row.repetitions > 0 ? easeToMastery(row.ease_factor ?? 2.5) : null,
   }));
 };
 
@@ -19,7 +19,7 @@ export const getOne = async (user, id) => {
   const row = await db_get(`SELECT * FROM entries WHERE id = ? AND userid = ?`, [id, user.id]);
   if (!row) return null;
   const tags = await getByEntry(id);
-  return { ...row, tags, mastery_level: easeToMastery(row.ease_factor ?? 2.5) };
+  return { ...row, tags, mastery_level: row.repetitions > 0 ? easeToMastery(row.ease_factor ?? 2.5) : null };
 };
 
 export const createEntry = async (user, data) => {
@@ -121,7 +121,7 @@ export const getDue = async (user) => {
   return rows.map(row => ({
     ...row,
     tags: tagsMap[row.id] ?? [],
-    mastery_level: easeToMastery(row.ease_factor ?? 2.5),
+    mastery_level: row.repetitions > 0 ? easeToMastery(row.ease_factor ?? 2.5) : null,
   }));
 };
 
