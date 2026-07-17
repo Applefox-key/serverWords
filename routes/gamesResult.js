@@ -64,6 +64,34 @@ const editProb = async (id, prob, userid) => {
   return result;
 };
 
+router.get("/collection/:collectionid", async (req, res) => {
+  const collectionid = parseInt(req.params.collectionid);
+  const userid = req.user.id;
+  try {
+    const contentRows = await db_all(
+      "SELECT id FROM content WHERE collectionid = ?",
+      [collectionid]
+    );
+    if (!contentRows.length) return res.status(200).json({ data: {} });
+    const ids = contentRows.map((r) => r.id).join(",");
+    const rows = await db_all(
+      `SELECT contentid, probability FROM gamesResult WHERE userid = ? AND contentid IN (${ids})`,
+      [userid]
+    );
+    const result = {};
+    rows.forEach((row) => {
+      try {
+        result[row.contentid] = JSON.parse(row.probability);
+      } catch {
+        result[row.contentid] = {};
+      }
+    });
+    res.status(200).json({ data: result });
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
 router.post("/get", async (req, res) => {
   let listid = req.body.data.listid;
   let game = req.body.data.game;
