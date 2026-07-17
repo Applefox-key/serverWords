@@ -202,6 +202,13 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         (err) => {},
       );
 
+      // SR fields migration — silently ignored if columns already exist
+      db.run(`ALTER TABLE entries ADD COLUMN ease_factor REAL DEFAULT 2.5`, () => {});
+      db.run(`ALTER TABLE entries ADD COLUMN interval_days INTEGER DEFAULT 0`, () => {});
+      db.run(`ALTER TABLE entries ADD COLUMN repetitions INTEGER DEFAULT 0`, () => {});
+      db.run(`ALTER TABLE entries ADD COLUMN next_review_at TEXT DEFAULT NULL`, () => {});
+      db.run(`ALTER TABLE entries ADD COLUMN last_reviewed_at TEXT DEFAULT NULL`, () => {});
+
       // entries tags
       db.run(
         `CREATE TABLE entry_tags (

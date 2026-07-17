@@ -5,6 +5,36 @@ import { uploadEntryImg } from "../helpers/multer.js";
 
 const router = express.Router();
 
+// Get due entries (next_review_at <= now)
+router.get("/due", async (req, res) => {
+  try {
+    const list = await entries.getDue(req.user);
+    res.status(200).json(list);
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
+// Submit review grade for SM-2
+router.post("/:id/review", async (req, res) => {
+  try {
+    const { grade, mode } = req.body;
+    if (grade === undefined || !mode) return sendError(res, "grade and mode are required");
+    const validGrades = [0, 3, 4, 5];
+    const validModes = ["flashcard", "quiz", "match", "puzzle"];
+    if (!validGrades.includes(grade)) return sendError(res, "invalid grade");
+    if (!validModes.includes(mode)) return sendError(res, "invalid mode");
+
+    const result = await entries.reviewEntry(req.user, req.params.id, grade, mode);
+    if (result.error) return sendError(res, result.error);
+
+    const item = await entries.getOne(req.user, req.params.id);
+    res.status(200).json(item);
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
 // Get all entries for current user
 router.get("/", async (req, res) => {
   try {

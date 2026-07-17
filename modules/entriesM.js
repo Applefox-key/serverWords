@@ -1,5 +1,6 @@
 import { db_get, db_all, db_run } from "../helpers/dbAsync.js";
 import { getTagsForEntries, getByEntry } from "./entryTagsM.js";
+import { applyReview, easeToMastery } from "../helpers/spacedRepetition.js";
 import fs from "fs";
 import path from "path";
 
@@ -7,14 +8,18 @@ export const getAll = async (user) => {
   const rows = await db_all(`SELECT * FROM entries WHERE userid = ?`, [user.id]);
   if (!rows) return [];
   const tagsMap = await getTagsForEntries(user);
-  return rows.map(row => ({ ...row, tags: tagsMap[row.id] ?? [] }));
+  return rows.map(row => ({
+    ...row,
+    tags: tagsMap[row.id] ?? [],
+    mastery_level: easeToMastery(row.ease_factor ?? 2.5),
+  }));
 };
 
 export const getOne = async (user, id) => {
   const row = await db_get(`SELECT * FROM entries WHERE id = ? AND userid = ?`, [id, user.id]);
   if (!row) return null;
   const tags = await getByEntry(id);
-  return { ...row, tags };
+  return { ...row, tags, mastery_level: easeToMastery(row.ease_factor ?? 2.5) };
 };
 
 export const createEntry = async (user, data) => {
@@ -74,6 +79,26 @@ export const updateEntry = async (user, id, data) => {
     fields.push("img = ?");
     params.push(data.img);
   }
+  if (data.ease_factor !== undefined) {
+    fields.push("ease_factor = ?");
+    params.push(data.ease_factor);
+  }
+  if (data.interval_days !== undefined) {
+    fields.push("interval_days = ?");
+    params.push(data.interval_days);
+  }
+  if (data.repetitions !== undefined) {
+    fields.push("repetitions = ?");
+    params.push(data.repetitions);
+  }
+  if (data.next_review_at !== undefined) {
+    fields.push("next_review_at = ?");
+    params.push(data.next_review_at);
+  }
+  if (data.last_reviewed_at !== undefined) {
+    fields.push("last_reviewed_at = ?");
+    params.push(data.last_reviewed_at);
+  }
 
   if (fields.length === 0) return { error: "no fields to update" };
 
@@ -83,6 +108,29 @@ export const updateEntry = async (user, id, data) => {
 
 export const deleteEntry = async (user, id) => {
   return await db_run(`DELETE FROM entries WHERE id = ? AND userid = ?`, [id, user.id]);
+};
+
+export const getDue = async (user) => {
+  const now = new Date().toISOString();
+  const rows = await db_all(
+    `SELECT * FROM entries WHERE userid = ? AND next_review_at IS NOT NULL AND next_review_at <= ? ORDER BY next_review_at ASC`,
+    [user.id, now]
+  );
+  if (!rows || rows.length === 0) return [];
+  const tagsMap = await getTagsForEntries(user);
+  return rows.map(row => ({
+    ...row,
+    tags: tagsMap[row.id] ?? [],
+    mastery_level: easeToMastery(row.ease_factor ?? 2.5),
+  }));
+};
+
+export const reviewEntry = async (user, id, grade, mode) => {
+  const entry = await getOne(user, id);
+  if (!entry) return { error: "not found" };
+
+  const srFields = applyReview(entry, grade, mode);
+  return await updateEntry(user, id, srFields);
 };
 
 export const deleteEntryImg = (userId, filename) => {
