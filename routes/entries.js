@@ -18,7 +18,7 @@ router.get("/due", async (req, res) => {
 // Submit review grade for SM-2
 router.post("/:id/review", async (req, res) => {
   try {
-    const { grade, mode } = req.body;
+    const { grade, mode } = req.body.data ?? req.body;
     if (grade === undefined || !mode) return sendError(res, "grade and mode are required");
     const validGrades = [0, 3, 4, 5];
     const validModes = ["flashcard", "quiz", "match", "puzzle"];
