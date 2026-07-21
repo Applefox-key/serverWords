@@ -132,6 +132,10 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         ON DELETE CASCADE ON UPDATE NO ACTION)`,
         (err) => {},
       );
+      db.run(
+        `ALTER TABLE collections ADD COLUMN layout TEXT DEFAULT 'standard'`,
+        (err) => {},
+      );
       //content
       db.run(
         `CREATE TABLE content (

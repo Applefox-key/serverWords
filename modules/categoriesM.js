@@ -135,8 +135,8 @@ export const getCategoryWithCollections = async (user, isPublic = false) => {
     queryPart0 += `, CASE WHEN collections.userid = ${userid} THEN 1 ELSE 0 END AS isMy`;
   } else queryPart += ` WHERE categories.userid=${userid}`;
 
-  let query = `SELECT categories.id, categories.name AS name, categories.userid as userid, 
-              collections.id AS collectionid, collections.isFavorite, collections.isPublic as isPublic, collections.name as collectionName,
+  let query = `SELECT categories.id, categories.name AS name, categories.userid as userid,
+              collections.id AS collectionid, collections.isFavorite, collections.isPublic as isPublic, collections.name as collectionName, collections.layout,
               COUNT(content.id) AS cardCount ${queryPart0}
   FROM collections 
   LEFT JOIN categories

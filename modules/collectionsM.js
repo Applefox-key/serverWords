@@ -50,7 +50,7 @@ export const getAll = async (user, pagination = {}) => {
   ];
 
   const rows = await db_all(
-    `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, isFavorite,
+    `SELECT collections.id, collections.note, collections.name AS name, isPublic, collections.categoryid, isFavorite, collections.layout,
     categories.name AS category,
     (SELECT ROUND(AVG(CASE WHEN typeof(rate) IN ('integer','real') THEN rate END), 2) FROM content WHERE collectionid = collections.id) AS avgRate,
     (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate <= 1) AS toLearn,
@@ -103,7 +103,7 @@ export const deleteAll = async (user) => {
 export const getOne = async (user, id) => {
   const userid = user.id;
   const row = await db_get(
-    `SELECT collections.name AS name, note, isPublic, isFavorite, categoryid, categories.name AS category,
+    `SELECT collections.name AS name, note, isPublic, isFavorite, categoryid, collections.layout, categories.name AS category,
     (SELECT ROUND(AVG(CASE WHEN typeof(rate) IN ('integer','real') THEN rate END), 2) FROM content WHERE collectionid = collections.id) AS avgRate,
     (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate <= 1) AS toLearn,
     (SELECT COUNT(*) FROM content WHERE collectionid = collections.id AND typeof(rate) IN ('integer','real') AND rate >= 2 AND rate <= 3) AS inProgress,
@@ -122,7 +122,7 @@ export const getOne = async (user, id) => {
 export const createCollection = async (user, set) => {
   const userid = user.id;
   return await db_get(
-    `INSERT INTO collections (name, note, userid, categoryid, isPublic, isFavorite) VALUES (?,?,?,?,?,?) RETURNING id`,
+    `INSERT INTO collections (name, note, userid, categoryid, isPublic, isFavorite, layout) VALUES (?,?,?,?,?,?,?) RETURNING id`,
     [
       set.name,
       set.note,
@@ -130,6 +130,7 @@ export const createCollection = async (user, set) => {
       set.categoryid ? set.categoryid : null,
       false,
       false,
+      set.layout ?? 'standard',
     ]
   );
 };
@@ -153,9 +154,10 @@ export const editCollection = async (set, id) => {
     note = COALESCE(?,note),
     categoryid = ${queryCat},
     isPublic = ${queryisPublic},
-    isFavorite = ${queryisFavorite}
+    isFavorite = ${queryisFavorite},
+    layout = COALESCE(?,layout)
                  WHERE id = ?`,
-    [set.name, set.note, set.categoryid, set.isPublic, set.isFavorite, id]
+    [set.name, set.note, set.categoryid, set.isPublic, set.isFavorite, set.layout, id]
   );
 };
 

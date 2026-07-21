@@ -57,9 +57,9 @@ export const getAllWithContent = async (user, select = "") => {
 
   // ${queryPart}
   const rows = await db_all(
-    `SELECT collections.id , collections.name AS name, categoryid, isPublic, isFavorite, collections.note, 
-    categories.name AS category, 
-    content.note AS note_cont, content.id AS id_cont, question,answer, imgA, imgQ, rate 
+    `SELECT collections.id , collections.name AS name, categoryid, isPublic, isFavorite, collections.note, collections.layout,
+    categories.name AS category,
+    content.note AS note_cont, content.id AS id_cont, question,answer, imgA, imgQ, rate
        FROM collections  LEFT JOIN  content 
        ON collections.id = content.collectionid
        LEFT JOIN  categories  
@@ -91,7 +91,7 @@ export const getOneWithContent = async (user, id, limit = null) => {
   const userid = user.id;
   const limitClause = limit ? ` LIMIT ${parseInt(limit)}` : "";
   const rows = await db_all(
-    `SELECT collections.id, collections.note, collections.name AS name, categoryid,
+    `SELECT collections.id, collections.note, collections.name AS name, categoryid, collections.layout,
           categories.name AS category, isPublic, isFavorite,
           question, answer, imgA, imgQ, rate, content.note AS note_cont, content.id AS id_cont,
           (SELECT ROUND(AVG(CASE WHEN typeof(c.rate) IN ('integer','real') THEN c.rate END), 2) FROM content c WHERE c.collectionid = collections.id) AS stats_avgRate,
