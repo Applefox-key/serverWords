@@ -18,6 +18,7 @@ export const formatCategoriesCollection = (result, pub = false) => {
       isMy,
       cardCount,
       tags,
+      layout,
     } = row;
     let categoryName = name ? name.toLowerCase() : "No category";
     if (!groupedMap.has(categoryName)) {
@@ -34,6 +35,7 @@ export const formatCategoriesCollection = (result, pub = false) => {
         name: collectionName,
         cardCount: cardCount ?? 0,
         tags: tags ?? [],
+        layout: layout ?? null,
       };
       if (!pub) {
         collectionObj.isPublic = isPublic;
