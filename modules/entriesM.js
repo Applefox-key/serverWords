@@ -133,6 +133,7 @@ export const reviewEntry = async (user, id, grade, mode) => {
   if (!entry) return { error: "not found" };
 
   const srFields = applyReview(entry, grade, mode);
+  if (srFields === null) return { skipped: true };
   return await updateEntry(user, id, srFields);
 };
 

@@ -21,7 +21,7 @@ router.post("/:id/review", async (req, res) => {
     const { grade, mode } = req.body.data ?? req.body;
     if (grade === undefined || !mode) return sendError(res, "grade and mode are required");
     const validGrades = [0, 3, 4, 5];
-    const validModes = ["flashcard", "quiz", "match", "puzzle"];
+    const validModes = ["flashcard", "quiz", "match", "puzzle", "write"];
     if (!validGrades.includes(grade)) return sendError(res, "invalid grade");
     if (!validModes.includes(mode)) return sendError(res, "invalid mode");
 
