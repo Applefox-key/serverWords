@@ -56,6 +56,22 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// Batch create entries (no images)
+router.post("/batch", async (req, res) => {
+  try {
+    const { entries: entriesData, tagIds } = req.body.data ?? req.body;
+    if (!Array.isArray(entriesData) || entriesData.length === 0)
+      return sendError(res, "entries must be a non-empty array");
+
+    const result = await entries.createEntryBatch(req.user, entriesData, tagIds ?? []);
+    if (result.error) return sendError(res, result.error);
+
+    res.status(200).json(result);
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
 // Create new entry
 router.post("/", uploadEntryImg.single("imgfile"), async (req, res) => {
   try {

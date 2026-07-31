@@ -137,6 +137,39 @@ export const reviewEntry = async (user, id, grade, mode) => {
   return await updateEntry(user, id, srFields);
 };
 
+export const createEntryBatch = async (user, entriesData, tagIds) => {
+  const now = new Date().toISOString();
+  const placeholders = entriesData.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ");
+  const values = entriesData.flatMap((d) => [
+    d.word,
+    d.explanation ?? "",
+    d.example ?? "",
+    d.category ?? "word",
+    d.rating ?? 1,
+    d.includeInPractice ?? 1,
+    now,
+    null,
+    user.id,
+  ]);
+
+  const rows = await db_all(
+    `INSERT INTO entries (word, explanation, example, category, rating, includeInPractice, createdAt, img, userid) VALUES ${placeholders} RETURNING id`,
+    values,
+  );
+
+  if (!rows || rows.error) return { error: rows?.error || "insert failed" };
+
+  const ids = rows.map((r) => r.id);
+
+  if (tagIds && tagIds.length > 0 && ids.length > 0) {
+    const tagRows = ids.flatMap((entryId) => tagIds.map((tagId) => [entryId, tagId]));
+    const tagPlaceholders = tagRows.map(() => "(?, ?)").join(", ");
+    await db_run(`INSERT INTO entries_to_tags (entryid, tagid) VALUES ${tagPlaceholders}`, tagRows.flat());
+  }
+
+  return { count: ids.length, ids };
+};
+
 export const deleteEntryImg = (userId, filename) => {
   const filePath = path.join(".", "content", userId.toString(), "entries", filename);
   fs.unlink(filePath, (err) => {
