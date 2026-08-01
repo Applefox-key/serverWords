@@ -213,6 +213,26 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
       db.run(`ALTER TABLE entries ADD COLUMN next_review_at TEXT DEFAULT NULL`, () => {});
       db.run(`ALTER TABLE entries ADD COLUMN last_reviewed_at TEXT DEFAULT NULL`, () => {});
 
+      // SR data integrity fix: cap ease_factor at 2.5 and interval_days at 365.
+      // Without a ceiling, repeated "Easy" grades inflate ease_factor without bound,
+      // producing interval_days in the millions. JS then serialises the date as
+      // "+YYYYY-..." (extended ISO, year > 9999). SQLite stores dates as TEXT and
+      // compares them lexicographically: '+' < '2', so "+011278-..." sorts before
+      // "2026-..." and the card always appears due. This migration corrects existing
+      // corrupted rows and is idempotent (no-op if data is already within bounds).
+      db.run(`
+        UPDATE entries
+        SET
+          ease_factor   = 2.5,
+          interval_days = 365,
+          next_review_at = CASE
+            WHEN last_reviewed_at IS NOT NULL
+            THEN datetime(substr(last_reviewed_at, 1, 19), '+365 days') || '.000Z'
+            ELSE NULL
+          END
+        WHERE ease_factor > 2.5 OR interval_days > 365
+      `, () => {});
+
       // entries tags
       db.run(
         `CREATE TABLE entry_tags (

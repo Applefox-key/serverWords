@@ -1,8 +1,10 @@
 // Weights affect both ease_factor delta and repetitions increment.
 // Game modes also cap the effective grade so a lucky correct answer
 // in a 4-choice quiz can't push the card to "Easy" tier.
-const WEIGHTS   = { flashcard: 0.9, quiz: 0.5, match: 0.5, puzzle: 0.6, write: 1.0 };
-const MAX_GRADE = { flashcard: 5,   quiz: 4,   match: 4,   puzzle: 4,   write: 5   };
+const WEIGHTS     = { flashcard: 0.9, quiz: 0.5, match: 0.5, puzzle: 0.6, write: 1.0 };
+const MAX_GRADE   = { flashcard: 5,   quiz: 4,   match: 4,   puzzle: 4,   write: 5   };
+const MAX_EASE    = 2.5;   // cap ease_factor so intervals don't grow without bound
+const MAX_INTERVAL = 365;  // cap at 1 year — prevents dates beyond year 9999 (SQLite lexicographic bug)
 
 function addDays(days) {
   const date = new Date();
@@ -20,34 +22,55 @@ export function applyReview(entry, grade, mode) {
   const weight = WEIGHTS[mode] ?? 1.0;
   const now = new Date().toISOString();
 
-  // grade=0 (Again) always resets — even if reviewed earlier today.
-  // next_review_at = now so the card surfaces immediately in Due Today for recovery.
   if (grade === 0) {
+    if (mode === 'flashcard') {
+      // "Again" in dedicated review: hard SM-2 lapse — full reset.
+      // next_review_at = now so the card surfaces immediately in Due for same-day recovery.
+      return {
+        repetitions: 0,
+        interval_days: 1,
+        ease_factor: entry.ease_factor ?? 2.5,
+        next_review_at: now,
+        last_reviewed_at: now,
+      };
+    }
+
+    // Wrong answer in a game mode (quiz/write/match/puzzle): soft lapse.
+    // Penalise ease and shorten the interval without wiping mastery progress.
+    const todayStr = now.slice(0, 10);
+    const lastStr  = (entry.last_reviewed_at ?? '').slice(0, 10);
+    if (todayStr === lastStr) return null;  // one lapse recorded per day
+
+    const reps         = entry.repetitions ?? 0;
+    const prevInterval = entry.interval_days ?? 1;
+    const newEase      = Math.max(1.3, (entry.ease_factor ?? 2.5) - 0.2);
+    const recoveryInterval = Math.max(1, Math.round(prevInterval * 0.2));
+
     return {
-      repetitions: 0,
-      interval_days: 1,
-      ease_factor: entry.ease_factor ?? 2.5,
-      next_review_at: now,
+      repetitions:      Math.max(0, reps - weight),
+      interval_days:    recoveryInterval,
+      ease_factor:      newEase,
+      next_review_at:   addDays(recoveryInterval),
       last_reviewed_at: now,
     };
   }
 
   // One counted session per card per day. Subsequent sessions are silently skipped
   // so replaying games all evening can't inflate repetitions.
-  // Exception: if the card was reset today by a grade-0 failure, allow one
-  // positive re-review so the user can recover it in Due Today the same day.
+  // Exception: if the card was hard-reset today (flashcard Again), allow one
+  // positive re-review so the user can recover it in Due the same day.
   const todayStr = now.slice(0, 10);
-  const lastStr = (entry.last_reviewed_at ?? '').slice(0, 10);
+  const lastStr  = (entry.last_reviewed_at ?? '').slice(0, 10);
   if (todayStr === lastStr) {
-    const wasResetToday = (entry.repetitions ?? 0) === 0 && entry.next_review_at != null;
-    if (!wasResetToday) return null;
+    const wasHardResetToday = (entry.repetitions ?? 0) === 0 && entry.next_review_at != null;
+    if (!wasHardResetToday) return null;
   }
 
   // Game modes are low-stakes — cap the grade so a trivial correct answer
   // doesn't count as "Easy" and inflate the card's ease_factor.
   const effectiveGrade = Math.min(grade, MAX_GRADE[mode] ?? 5);
   const easeDelta = (0.1 - (5 - effectiveGrade) * 0.08) * weight;
-  const newEase = Math.max(1.3, (entry.ease_factor ?? 2.5) + easeDelta);
+  const newEase = Math.min(MAX_EASE, Math.max(1.3, (entry.ease_factor ?? 2.5) + easeDelta));
 
   // repetitions is stored as REAL (SQLite stores fractional values in INTEGER
   // affinity columns without data loss).  Weighted increment means game sessions
@@ -60,9 +83,9 @@ export function applyReview(entry, grade, mode) {
 
   return {
     repetitions: reps + weight,
-    interval_days: newInterval,
+    interval_days: Math.min(MAX_INTERVAL, newInterval),
     ease_factor: newEase,
-    next_review_at: addDays(newInterval),
+    next_review_at: addDays(Math.min(MAX_INTERVAL, newInterval)),
     last_reviewed_at: now,
   };
 }
