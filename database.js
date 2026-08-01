@@ -227,10 +227,20 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
           interval_days = 365,
           next_review_at = CASE
             WHEN last_reviewed_at IS NOT NULL
-            THEN datetime(substr(last_reviewed_at, 1, 19), '+365 days') || '.000Z'
+            THEN replace(datetime(substr(last_reviewed_at, 1, 19), '+365 days'), ' ', 'T') || '.000Z'
             ELSE NULL
           END
         WHERE ease_factor > 2.5 OR interval_days > 365
+      `, () => {});
+
+      // Fix any next_review_at dates that were written with a space instead of 'T'
+      // (SQLite datetime() uses space; JS toISOString() uses 'T'). Space < 'T' in
+      // ASCII so "2027-08-01 ..." would incorrectly sort before "2027-08-01T..." on
+      // same-day comparisons.
+      db.run(`
+        UPDATE entries
+        SET next_review_at = replace(next_review_at, ' ', 'T')
+        WHERE next_review_at LIKE '% %'
       `, () => {});
 
       // entries tags
