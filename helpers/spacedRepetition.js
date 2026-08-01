@@ -21,21 +21,27 @@ export function applyReview(entry, grade, mode) {
   const now = new Date().toISOString();
 
   // grade=0 (Again) always resets — even if reviewed earlier today.
+  // next_review_at = now so the card surfaces immediately in Due Today for recovery.
   if (grade === 0) {
     return {
       repetitions: 0,
       interval_days: 1,
       ease_factor: entry.ease_factor ?? 2.5,
-      next_review_at: addDays(1),
+      next_review_at: now,
       last_reviewed_at: now,
     };
   }
 
   // One counted session per card per day. Subsequent sessions are silently skipped
   // so replaying games all evening can't inflate repetitions.
+  // Exception: if the card was reset today by a grade-0 failure, allow one
+  // positive re-review so the user can recover it in Due Today the same day.
   const todayStr = now.slice(0, 10);
   const lastStr = (entry.last_reviewed_at ?? '').slice(0, 10);
-  if (todayStr === lastStr) return null;
+  if (todayStr === lastStr) {
+    const wasResetToday = (entry.repetitions ?? 0) === 0 && entry.next_review_at != null;
+    if (!wasResetToday) return null;
+  }
 
   // Game modes are low-stakes — cap the grade so a trivial correct answer
   // doesn't count as "Easy" and inflate the card's ease_factor.
