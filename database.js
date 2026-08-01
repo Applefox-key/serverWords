@@ -213,24 +213,22 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
       db.run(`ALTER TABLE entries ADD COLUMN next_review_at TEXT DEFAULT NULL`, () => {});
       db.run(`ALTER TABLE entries ADD COLUMN last_reviewed_at TEXT DEFAULT NULL`, () => {});
 
-      // SR data integrity fix: cap ease_factor at 2.5 and interval_days at 365.
-      // Without a ceiling, repeated "Easy" grades inflate ease_factor without bound,
-      // producing interval_days in the millions. JS then serialises the date as
-      // "+YYYYY-..." (extended ISO, year > 9999). SQLite stores dates as TEXT and
-      // compares them lexicographically: '+' < '2', so "+011278-..." sorts before
-      // "2026-..." and the card always appears due. This migration corrects existing
-      // corrupted rows and is idempotent (no-op if data is already within bounds).
+      // SR data integrity fix: cap interval_days at 730 (2 years).
+      // Without a ceiling on interval_days, the date overflows year 9999 and JS
+      // serialises it as "+YYYYY-..." (extended ISO). SQLite compares TEXT dates
+      // lexicographically: '+' < '2', so "+011278-..." sorts before "2026-..." and
+      // the card always appears due. ease_factor is NOT capped here — capping it at
+      // 2.5 would prevent mastery_level from ever reaching 5 (needs ease >= 2.6).
       db.run(`
         UPDATE entries
         SET
-          ease_factor   = 2.5,
-          interval_days = 365,
+          interval_days  = 730,
           next_review_at = CASE
             WHEN last_reviewed_at IS NOT NULL
-            THEN replace(datetime(substr(last_reviewed_at, 1, 19), '+365 days'), ' ', 'T') || '.000Z'
+            THEN replace(datetime(substr(last_reviewed_at, 1, 19), '+730 days'), ' ', 'T') || '.000Z'
             ELSE NULL
           END
-        WHERE ease_factor > 2.5 OR interval_days > 365
+        WHERE interval_days > 730
       `, () => {});
 
       // Fix any next_review_at dates that were written with a space instead of 'T'

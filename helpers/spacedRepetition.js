@@ -3,8 +3,11 @@
 // in a 4-choice quiz can't push the card to "Easy" tier.
 const WEIGHTS     = { flashcard: 0.9, quiz: 0.5, match: 0.5, puzzle: 0.6, write: 1.0 };
 const MAX_GRADE   = { flashcard: 5,   quiz: 4,   match: 4,   puzzle: 4,   write: 5   };
-const MAX_EASE    = 2.5;   // cap ease_factor so intervals don't grow without bound
-const MAX_INTERVAL = 365;  // cap at 1 year — prevents dates beyond year 9999 (SQLite lexicographic bug)
+// No cap on ease_factor — capping it at 2.5 would prevent mastery_level from
+// ever reaching 5 (which requires ease >= 2.6). The astronomical-interval bug
+// was caused by unbounded interval_days, not by ease_factor itself.
+const MAX_INTERVAL = 730;          // cap at 2 years — prevents dates beyond year 9999 (SQLite lexicographic bug)
+const MAX_INTERVAL_PREMASTER = 21; // cards below mastery=5 are never scheduled more than 3 weeks out
 
 function addDays(days) {
   const date = new Date();
@@ -70,31 +73,43 @@ export function applyReview(entry, grade, mode) {
   // doesn't count as "Easy" and inflate the card's ease_factor.
   const effectiveGrade = Math.min(grade, MAX_GRADE[mode] ?? 5);
   const easeDelta = (0.1 - (5 - effectiveGrade) * 0.08) * weight;
-  const newEase = Math.min(MAX_EASE, Math.max(1.3, (entry.ease_factor ?? 2.5) + easeDelta));
+  const newEase = Math.max(1.3, (entry.ease_factor ?? 2.5) + easeDelta);
+
+  // Early-phase multiplier: Easy cards return less often, Hard cards come back sooner.
+  // SM-2 (reps >= 4.5) is already grade-sensitive via ease_factor.
+  const earlyMult = effectiveGrade >= 5 ? 1.5 : effectiveGrade <= 3 ? 0.5 : 1.0;
 
   // repetitions is stored as REAL (SQLite stores fractional values in INTEGER
   // affinity columns without data loss).  Weighted increment means game sessions
   // advance mastery proportionally slower than real flashcard reviews.
   const reps = entry.repetitions ?? 0;
   let newInterval;
-  if (reps < 1) newInterval = 1;
-  else if (reps < 2) newInterval = 3;
-  else newInterval = Math.round((entry.interval_days ?? 1) * newEase);
+  if      (reps < 0.5) newInterval = Math.max(1, Math.round(1  * earlyMult));
+  else if (reps < 1.5) newInterval = Math.max(1, Math.round(2  * earlyMult));
+  else if (reps < 2.5) newInterval = Math.max(1, Math.round(4  * earlyMult));
+  else if (reps < 3.5) newInterval = Math.max(1, Math.round(7  * earlyMult));
+  else if (reps < 4.5) newInterval = Math.max(1, Math.round(14 * earlyMult));
+  else                 newInterval = Math.round((entry.interval_days ?? 1) * newEase);
+
+  const newReps = reps + weight;
+  const postMastery = easeToMastery(newEase, newReps);
+  const intervalCap = (postMastery !== null && postMastery >= 5) ? MAX_INTERVAL : MAX_INTERVAL_PREMASTER;
+  const cappedInterval = Math.min(intervalCap, newInterval);
 
   return {
-    repetitions: reps + weight,
-    interval_days: Math.min(MAX_INTERVAL, newInterval),
+    repetitions: newReps,
+    interval_days: cappedInterval,
     ease_factor: newEase,
-    next_review_at: addDays(Math.min(MAX_INTERVAL, newInterval)),
+    next_review_at: addDays(cappedInterval),
     last_reviewed_at: now,
   };
 }
 
 function repCap(repetitions) {
-  if (repetitions >= 10) return 5;
-  if (repetitions >= 6)  return 4;
-  if (repetitions >= 3)  return 3;
-  if (repetitions >= 1)  return 2;
+  if (repetitions >= 6) return 5;
+  if (repetitions >= 4) return 4;
+  if (repetitions >= 2) return 3;
+  if (repetitions >= 1) return 2;
   return 0;
 }
 
