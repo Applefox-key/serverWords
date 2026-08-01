@@ -114,8 +114,7 @@ export const getDue = async (user) => {
   const now = new Date().toISOString();
   const rows = await db_all(
     `SELECT * FROM entries WHERE userid = ? AND includeInPractice = 1 AND (
-      (next_review_at IS NOT NULL AND next_review_at <= ?)
-      OR repetitions = 0
+      next_review_at IS NULL OR next_review_at <= ?
     ) ORDER BY next_review_at ASC NULLS LAST`,
     [user.id, now]
   );
