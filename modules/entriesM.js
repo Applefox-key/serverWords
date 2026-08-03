@@ -127,11 +127,11 @@ export const getDue = async (user) => {
   }));
 };
 
-export const reviewEntry = async (user, id, grade, mode) => {
+export const reviewEntry = async (user, id, grade, mode, isDue = false) => {
   const entry = await getOne(user, id);
   if (!entry) return { error: "not found" };
 
-  const srFields = applyReview(entry, grade, mode);
+  const srFields = applyReview(entry, grade, mode, isDue);
   if (srFields === null) return { skipped: true };
   return await updateEntry(user, id, srFields);
 };

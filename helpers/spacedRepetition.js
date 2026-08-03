@@ -21,7 +21,7 @@ function addDays(days) {
  * @param {0|3|4|5} grade - Again=0, Hard=3, Good=4, Easy=5
  * @param {'flashcard'|'quiz'|'match'|'puzzle'|'write'} mode
  */
-export function applyReview(entry, grade, mode) {
+export function applyReview(entry, grade, mode, isDue = false) {
   const weight = WEIGHTS[mode] ?? 1.0;
   const now = new Date().toISOString();
 
@@ -58,15 +58,15 @@ export function applyReview(entry, grade, mode) {
     };
   }
 
-  // One counted session per card per day. Subsequent sessions are silently skipped
-  // so replaying games all evening can't inflate repetitions.
-  // Exception: if the card was hard-reset today (flashcard Again), allow one
-  // positive re-review so the user can recover it in Due the same day.
+  // One counted session per card per day to prevent rep inflation.
+  // Exception 1: Due flashcard always counts — overrides same-day game sessions.
+  // Exception 2: hard-reset cards (flashcard Again) allow one same-day recovery review.
   const todayStr = now.slice(0, 10);
   const lastStr  = (entry.last_reviewed_at ?? '').slice(0, 10);
   if (todayStr === lastStr) {
     const wasHardResetToday = (entry.repetitions ?? 0) === 0 && entry.next_review_at != null;
-    if (!wasHardResetToday) return null;
+    const isDueFlashcard = isDue && mode === 'flashcard';
+    if (!wasHardResetToday && !isDueFlashcard) return null;
   }
 
   // Game modes are low-stakes — cap the grade so a trivial correct answer
