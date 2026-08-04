@@ -5,6 +5,16 @@ import { uploadEntryImg } from "../helpers/multer.js";
 
 const router = express.Router();
 
+// Weekly activity stats for bar chart
+router.get("/stats/weekly", async (req, res) => {
+  try {
+    const stats = await entries.getWeeklyStats(req.user);
+    res.status(200).json(stats);
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
 // Get due entries (next_review_at <= now)
 router.get("/due", async (req, res) => {
   try {
@@ -119,6 +129,11 @@ router.delete("/:id", async (req, res) => {
   try {
     const current = await entries.getOne(req.user, req.params.id);
     if (current?.img) entries.deleteEntryImg(req.user.id, current.img);
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (current?.createdAt?.slice(0, 10) === today) {
+      entries.decrementEntriesAdded(req.user.id).catch(() => {});
+    }
 
     const result = await entries.deleteEntry(req.user, req.params.id);
     res.status(result.error ? 400 : 200).json(result.error ? { error: result.error } : { message: "success" });

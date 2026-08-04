@@ -4,6 +4,18 @@ import { applyReview, easeToMastery } from "../helpers/spacedRepetition.js";
 import fs from "fs";
 import path from "path";
 
+async function upsertDailyActivity(userId, entriesDelta, reviewsDelta) {
+  const today = new Date().toISOString().slice(0, 10);
+  await db_run(
+    `INSERT INTO daily_activity (user_id, date, entries_added, reviews_count)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(user_id, date) DO UPDATE SET
+       entries_added = MAX(0, daily_activity.entries_added + excluded.entries_added),
+       reviews_count = MAX(0, daily_activity.reviews_count + excluded.reviews_count)`,
+    [userId, today, entriesDelta, reviewsDelta],
+  );
+}
+
 export const getAll = async (user) => {
   const rows = await db_all(`SELECT * FROM entries WHERE userid = ?`, [user.id]);
   if (!rows) return [];
@@ -41,7 +53,9 @@ export const createEntry = async (user, data) => {
     import("../database.js").then(({ default: db }) => {
       db.run(query, params, function (err) {
         if (err) return reject({ error: err.message });
-        resolve({ id: this.lastID });
+        const id = this.lastID;
+        upsertDailyActivity(user.id, 1, 0).catch(() => {});
+        resolve({ id });
       });
     });
   });
@@ -131,9 +145,15 @@ export const reviewEntry = async (user, id, grade, mode, isDue = false) => {
   const entry = await getOne(user, id);
   if (!entry) return { error: "not found" };
 
+  const today = new Date().toISOString().slice(0, 10);
+  const isFirstReviewToday = entry.last_reviewed_at?.slice(0, 10) !== today;
+
   const srFields = applyReview(entry, grade, mode, isDue);
   if (srFields === null) return { skipped: true };
-  return await updateEntry(user, id, srFields);
+
+  const result = await updateEntry(user, id, srFields);
+  if (isFirstReviewToday) upsertDailyActivity(user.id, 0, 1).catch(() => {});
+  return result;
 };
 
 export const createEntryBatch = async (user, entriesData, tagIds) => {
@@ -159,6 +179,7 @@ export const createEntryBatch = async (user, entriesData, tagIds) => {
   if (!rows || rows.error) return { error: rows?.error || "insert failed" };
 
   const ids = rows.map((r) => r.id);
+  upsertDailyActivity(user.id, ids.length, 0).catch(() => {});
 
   if (tagIds && tagIds.length > 0 && ids.length > 0) {
     const tagRows = ids.flatMap((entryId) => tagIds.map((tagId) => [entryId, tagId]));
@@ -167,6 +188,35 @@ export const createEntryBatch = async (user, entriesData, tagIds) => {
   }
 
   return { count: ids.length, ids };
+};
+
+export const decrementEntriesAdded = async (userId) => {
+  const today = new Date().toISOString().slice(0, 10);
+  return db_run(
+    `UPDATE daily_activity SET entries_added = MAX(0, entries_added - 1)
+     WHERE user_id = ? AND date = ?`,
+    [userId, today],
+  );
+};
+
+export const getWeeklyStats = async (user) => {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().slice(0, 10);
+  });
+  const placeholders = days.map(() => "?").join(",");
+  const rows = await db_all(
+    `SELECT date, entries_added, reviews_count FROM daily_activity
+     WHERE user_id = ? AND date IN (${placeholders})`,
+    [user.id, ...days],
+  );
+  const map = Object.fromEntries((rows ?? []).map((r) => [r.date, r]));
+  return days.map((date) => ({
+    date,
+    entries_added: map[date]?.entries_added ?? 0,
+    reviews_count: map[date]?.reviews_count ?? 0,
+  }));
 };
 
 export const deleteEntryImg = (userId, filename) => {

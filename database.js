@@ -290,6 +290,34 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
 )`,
         (err) => {},
       );
+
+      // daily activity stats for bar chart
+      db.run(`CREATE TABLE IF NOT EXISTS daily_activity (
+        user_id       INTEGER NOT NULL,
+        date          TEXT NOT NULL,
+        entries_added INTEGER DEFAULT 0,
+        reviews_count INTEGER DEFAULT 0,
+        PRIMARY KEY (user_id, date),
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`, () => {});
+
+      // backfill entries_added from existing entries
+      db.run(`
+        INSERT INTO daily_activity (user_id, date, entries_added, reviews_count)
+        SELECT userid, DATE(createdAt), COUNT(*), 0
+        FROM entries WHERE createdAt IS NOT NULL
+        GROUP BY userid, DATE(createdAt)
+        ON CONFLICT(user_id, date) DO UPDATE SET entries_added = excluded.entries_added
+      `, () => {});
+
+      // backfill reviews_count from last_reviewed_at (approximation — only last review per card per day)
+      db.run(`
+        INSERT INTO daily_activity (user_id, date, entries_added, reviews_count)
+        SELECT userid, DATE(last_reviewed_at), 0, COUNT(*)
+        FROM entries WHERE last_reviewed_at IS NOT NULL
+        GROUP BY userid, DATE(last_reviewed_at)
+        ON CONFLICT(user_id, date) DO UPDATE SET reviews_count = excluded.reviews_count
+      `, () => {});
     });
 
     //----------------------------------------------------------------------------
