@@ -15,6 +15,7 @@ import playlistsRouter from "./routes/playlists.js";
 import gamesResultRouter from "./routes/gamesResult.js";
 import collectionTagsRouter from "./routes/collectionTags.js";
 import entryTagsRouter from "./routes/entryTags.js";
+import adminRouter from "./routes/admin.js";
 import * as usr from "./modules/usersM.js";
 import { runDailyQueueUpdate } from "./helpers/runDailyQueueUpdate.js";
 import { sendError, sendOk } from "./helpers/responseHelpers.js";
@@ -81,6 +82,7 @@ app.use("/gamesresult", gamesResultRouter);
 app.use("/entries", entriesRouter);
 app.use("/collection-tags", collectionTagsRouter);
 app.use("/entry-tags", entryTagsRouter);
+app.use("/admin", adminRouter);
 // Default response for any other request
 app.use(function (req, res) {
   sendError(res, "bad request", 404);
