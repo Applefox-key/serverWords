@@ -4,8 +4,14 @@ import { applyReview, easeToMastery } from "../helpers/spacedRepetition.js";
 import fs from "fs";
 import path from "path";
 
-async function upsertDailyActivity(userId, entriesDelta, reviewsDelta) {
-  const today = new Date().toISOString().slice(0, 10);
+function localDate(tz = 0) {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() + tz);
+  return d.toISOString().slice(0, 10);
+}
+
+async function upsertDailyActivity(userId, entriesDelta, reviewsDelta, tz = 0) {
+  const today = localDate(tz);
   await db_run(
     `INSERT INTO daily_activity (user_id, date, entries_added, reviews_count)
      VALUES (?, ?, ?, ?)
@@ -34,7 +40,7 @@ export const getOne = async (user, id) => {
   return { ...row, tags, mastery_level: easeToMastery(row.ease_factor ?? 2.5, row.repetitions ?? 0) };
 };
 
-export const createEntry = async (user, data) => {
+export const createEntry = async (user, data, tz = 0) => {
   return await new Promise((resolve, reject) => {
     const query = `INSERT INTO entries
       (word, explanation, example, category, rating, includeInPractice, createdAt, img, userid)
@@ -54,7 +60,7 @@ export const createEntry = async (user, data) => {
       db.run(query, params, function (err) {
         if (err) return reject({ error: err.message });
         const id = this.lastID;
-        upsertDailyActivity(user.id, 1, 0).catch(() => {});
+        upsertDailyActivity(user.id, 1, 0, tz).catch(() => {});
         resolve({ id });
       });
     });
@@ -141,22 +147,22 @@ export const getDue = async (user) => {
   }));
 };
 
-export const reviewEntry = async (user, id, grade, mode, isDue = false) => {
+export const reviewEntry = async (user, id, grade, mode, isDue = false, tz = 0) => {
   const entry = await getOne(user, id);
   if (!entry) return { error: "not found" };
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDate(tz);
   const isFirstReviewToday = entry.last_reviewed_at?.slice(0, 10) !== today;
 
   const srFields = applyReview(entry, grade, mode, isDue);
   if (srFields === null) return { skipped: true };
 
   const result = await updateEntry(user, id, srFields);
-  if (isFirstReviewToday) upsertDailyActivity(user.id, 0, 1).catch(() => {});
+  if (isFirstReviewToday) upsertDailyActivity(user.id, 0, 1, tz).catch(() => {});
   return result;
 };
 
-export const createEntryBatch = async (user, entriesData, tagIds) => {
+export const createEntryBatch = async (user, entriesData, tagIds, tz = 0) => {
   const now = new Date().toISOString();
   const placeholders = entriesData.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ");
   const values = entriesData.flatMap((d) => [
@@ -179,7 +185,7 @@ export const createEntryBatch = async (user, entriesData, tagIds) => {
   if (!rows || rows.error) return { error: rows?.error || "insert failed" };
 
   const ids = rows.map((r) => r.id);
-  upsertDailyActivity(user.id, ids.length, 0).catch(() => {});
+  upsertDailyActivity(user.id, ids.length, 0, tz).catch(() => {});
 
   if (tagIds && tagIds.length > 0 && ids.length > 0) {
     const tagRows = ids.flatMap((entryId) => tagIds.map((tagId) => [entryId, tagId]));
@@ -190,8 +196,8 @@ export const createEntryBatch = async (user, entriesData, tagIds) => {
   return { count: ids.length, ids };
 };
 
-export const decrementEntriesAdded = async (userId) => {
-  const today = new Date().toISOString().slice(0, 10);
+export const decrementEntriesAdded = async (userId, tz = 0) => {
+  const today = localDate(tz);
   return db_run(
     `UPDATE daily_activity SET entries_added = MAX(0, entries_added - 1)
      WHERE user_id = ? AND date = ?`,
@@ -199,23 +205,41 @@ export const decrementEntriesAdded = async (userId) => {
   );
 };
 
-export const getWeeklyStats = async (user) => {
+export const getWeeklyStats = async (user, tz = 0) => {
+  const tzStr = `${tz >= 0 ? "+" : ""}${tz} minutes`;
+
+  // Generate 7 local dates (oldest → newest)
+  const localToday = localDate(tz);
   const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
+    const d = new Date(localToday + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() - (6 - i));
     return d.toISOString().slice(0, 10);
   });
+
   const placeholders = days.map(() => "?").join(",");
-  const rows = await db_all(
-    `SELECT date, entries_added, reviews_count FROM daily_activity
+
+  // entries_added: calculate from entries table with tz adjustment (always accurate)
+  const entryRows = await db_all(
+    `SELECT DATE(datetime(createdAt, ?)) as date, COUNT(*) as entries_added
+     FROM entries WHERE userid = ? AND DATE(datetime(createdAt, ?)) IN (${placeholders})
+     GROUP BY date`,
+    [tzStr, user.id, tzStr, ...days],
+  );
+
+  // reviews_count: from daily_activity (local dates going forward)
+  const reviewRows = await db_all(
+    `SELECT date, reviews_count FROM daily_activity
      WHERE user_id = ? AND date IN (${placeholders})`,
     [user.id, ...days],
   );
-  const map = Object.fromEntries((rows ?? []).map((r) => [r.date, r]));
+
+  const entriesMap = Object.fromEntries((entryRows ?? []).map((r) => [r.date, r.entries_added]));
+  const reviewsMap = Object.fromEntries((reviewRows ?? []).map((r) => [r.date, r.reviews_count]));
+
   return days.map((date) => ({
     date,
-    entries_added: map[date]?.entries_added ?? 0,
-    reviews_count: map[date]?.reviews_count ?? 0,
+    entries_added: entriesMap[date] ?? 0,
+    reviews_count: reviewsMap[date] ?? 0,
   }));
 };
 

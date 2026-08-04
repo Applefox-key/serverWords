@@ -301,23 +301,16 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
       )`, () => {});
 
-      // backfill entries_added from existing entries
-      db.run(`
-        INSERT INTO daily_activity (user_id, date, entries_added, reviews_count)
-        SELECT userid, DATE(createdAt), COUNT(*), 0
-        FROM entries WHERE createdAt IS NOT NULL
-        GROUP BY userid, DATE(createdAt)
-        ON CONFLICT(user_id, date) DO UPDATE SET entries_added = excluded.entries_added
-      `, () => {});
+      // migrations table for one-time operations
+      db.run(`CREATE TABLE IF NOT EXISTS migrations (key TEXT PRIMARY KEY)`, () => {});
 
-      // backfill reviews_count from last_reviewed_at (approximation — only last review per card per day)
-      db.run(`
-        INSERT INTO daily_activity (user_id, date, entries_added, reviews_count)
-        SELECT userid, DATE(last_reviewed_at), 0, COUNT(*)
-        FROM entries WHERE last_reviewed_at IS NOT NULL
-        GROUP BY userid, DATE(last_reviewed_at)
-        ON CONFLICT(user_id, date) DO UPDATE SET reviews_count = excluded.reviews_count
-      `, () => {});
+      // one-time: clear daily_activity so old UTC-date rows don't mix with new local-date rows
+      db.run(
+        `INSERT OR IGNORE INTO migrations (key) VALUES ('clear_daily_activity_v1')`,
+        function () {
+          if (this.changes > 0) db.run(`DELETE FROM daily_activity`);
+        },
+      );
     });
 
     //----------------------------------------------------------------------------

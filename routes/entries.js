@@ -5,10 +5,16 @@ import { uploadEntryImg } from "../helpers/multer.js";
 
 const router = express.Router();
 
+const getTz = (req) => {
+  const raw = req.headers["x-tz-offset"] ?? req.query.tz ?? "0";
+  const n = parseInt(raw, 10);
+  return isNaN(n) ? 0 : n;
+};
+
 // Weekly activity stats for bar chart
 router.get("/stats/weekly", async (req, res) => {
   try {
-    const stats = await entries.getWeeklyStats(req.user);
+    const stats = await entries.getWeeklyStats(req.user, getTz(req));
     res.status(200).json(stats);
   } catch (error) {
     sendError(res, error.message);
@@ -35,7 +41,7 @@ router.post("/:id/review", async (req, res) => {
     if (!validGrades.includes(grade)) return sendError(res, "invalid grade");
     if (!validModes.includes(mode)) return sendError(res, "invalid mode");
 
-    const result = await entries.reviewEntry(req.user, req.params.id, grade, mode, !!isDue);
+    const result = await entries.reviewEntry(req.user, req.params.id, grade, mode, !!isDue, getTz(req));
     if (result.error) return sendError(res, result.error);
 
     const item = await entries.getOne(req.user, req.params.id);
@@ -73,7 +79,7 @@ router.post("/batch", async (req, res) => {
     if (!Array.isArray(entriesData) || entriesData.length === 0)
       return sendError(res, "entries must be a non-empty array");
 
-    const result = await entries.createEntryBatch(req.user, entriesData, tagIds ?? []);
+    const result = await entries.createEntryBatch(req.user, entriesData, tagIds ?? [], getTz(req));
     if (result.error) return sendError(res, result.error);
 
     res.status(200).json(result);
@@ -87,7 +93,7 @@ router.post("/", uploadEntryImg.single("imgfile"), async (req, res) => {
   try {
     const data = JSON.parse(req.body.data);
     if (req.file) data.img = req.file.filename;
-    const result = await entries.createEntry(req.user, data);
+    const result = await entries.createEntry(req.user, data, getTz(req));
     if (result.error) return sendError(res, result.error);
 
     // return the created entry
@@ -130,9 +136,15 @@ router.delete("/:id", async (req, res) => {
     const current = await entries.getOne(req.user, req.params.id);
     if (current?.img) entries.deleteEntryImg(req.user.id, current.img);
 
-    const today = new Date().toISOString().slice(0, 10);
-    if (current?.createdAt?.slice(0, 10) === today) {
-      entries.decrementEntriesAdded(req.user.id).catch(() => {});
+    const tz = getTz(req);
+    const localNow = new Date();
+    localNow.setMinutes(localNow.getMinutes() + tz);
+    const today = localNow.toISOString().slice(0, 10);
+    const entryLocalDate = current?.createdAt
+      ? (() => { const d = new Date(current.createdAt); d.setMinutes(d.getMinutes() + tz); return d.toISOString().slice(0, 10); })()
+      : null;
+    if (entryLocalDate === today) {
+      entries.decrementEntriesAdded(req.user.id, getTz(req)).catch(() => {});
     }
 
     const result = await entries.deleteEntry(req.user, req.params.id);
