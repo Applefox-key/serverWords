@@ -1,6 +1,6 @@
 import express from "express";
 import md5 from "md5";
-import { db_all } from "../helpers/dbAsync.js";
+import { db_all, db_run } from "../helpers/dbAsync.js";
 import { sendError, sendOk, sendResponse, sendResult } from "../helpers/responseHelpers.js";
 import * as usr from "../modules/usersM.js";
 import * as exp from "../modules/expressionsM.js";
@@ -97,6 +97,23 @@ router.get("/collection-tags", async (req, res) => {
 router.get("/collections-to-tags", async (req, res) => {
   try { sendResponse(res, await db_all("SELECT * FROM collections_to_tags")); }
   catch (e) { sendError(res, e.message); }
+});
+
+router.get("/daily-activity", async (req, res) => {
+  try { sendResponse(res, await db_all("SELECT * FROM daily_activity ORDER BY date DESC")); }
+  catch (e) { sendError(res, e.message); }
+});
+
+router.patch("/daily-activity", async (req, res) => {
+  try {
+    const { user_id, date, entries_added, reviews_count } = req.body.data;
+    if (!user_id || !date) return sendError(res, "user_id and date are required");
+    await db_run(
+      `UPDATE daily_activity SET entries_added = ?, reviews_count = ? WHERE user_id = ? AND date = ?`,
+      [parseInt(entries_added), parseInt(reviews_count), user_id, date]
+    );
+    sendOk(res, "updated");
+  } catch (e) { sendError(res, e.message); }
 });
 
 router.get("/pbcollections", async (req, res) => {
