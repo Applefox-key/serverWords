@@ -128,6 +128,15 @@ router.patch("/daily-activity", async (req, res) => {
   } catch (e) { sendError(res, e.message); }
 });
 
+router.delete("/daily-activity", async (req, res) => {
+  try {
+    const { user_id, date } = req.query;
+    if (!user_id || !date) return sendError(res, "user_id and date are required");
+    await db_run(`DELETE FROM daily_activity WHERE user_id = ? AND date = ?`, [parseInt(user_id), date]);
+    sendOk(res, "deleted");
+  } catch (e) { sendError(res, e.message); }
+});
+
 router.get("/pbcollections", async (req, res) => {
   try {
     const result = await pbcol.getAllWithCount();
