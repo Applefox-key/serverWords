@@ -104,6 +104,18 @@ router.get("/daily-activity", async (req, res) => {
   catch (e) { sendError(res, e.message); }
 });
 
+router.post("/daily-activity", async (req, res) => {
+  try {
+    const { user_id, date, entries_added = 0, reviews_count = 0 } = req.body.data;
+    if (!user_id || !date) return sendError(res, "user_id and date are required");
+    await db_run(
+      `INSERT INTO daily_activity (user_id, date, entries_added, reviews_count) VALUES (?, ?, ?, ?)`,
+      [parseInt(user_id), date, parseInt(entries_added), parseInt(reviews_count)]
+    );
+    sendOk(res, "created");
+  } catch (e) { sendError(res, e.message); }
+});
+
 router.patch("/daily-activity", async (req, res) => {
   try {
     const { user_id, date, entries_added, reviews_count } = req.body.data;
