@@ -205,6 +205,58 @@ export const decrementEntriesAdded = async (userId, tz = 0) => {
   );
 };
 
+async function computeStreak(userId, tz = 0) {
+  const tzStr = `${tz >= 0 ? "+" : ""}${tz} minutes`;
+  const today = localDate(tz);
+
+  // All active days from daily_activity
+  const activityRows = await db_all(
+    `SELECT date FROM daily_activity
+     WHERE user_id = ? AND (entries_added > 0 OR reviews_count > 0)
+     ORDER BY date DESC`,
+    [userId],
+  );
+  const activityDates = new Set(activityRows.map((r) => r.date));
+
+  // Earliest date tracked in daily_activity (before this we fall back to entries table)
+  const firstRow = await db_get(
+    `SELECT MIN(date) as first_date FROM daily_activity WHERE user_id = ?`,
+    [userId],
+  );
+  const firstActivityDate = firstRow?.first_date ?? null;
+
+  // All distinct entry-creation dates (fallback for pre-daily_activity period)
+  const entryDateRows = await db_all(
+    `SELECT DISTINCT DATE(datetime(createdAt, ?)) as date FROM entries WHERE userid = ?`,
+    [tzStr, userId],
+  );
+  const entryDates = new Set(entryDateRows.map((r) => r.date));
+
+  let streak = 0;
+  let i = 0;
+  while (true) {
+    const d = new Date(today + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+
+    const isActive =
+      firstActivityDate && dateStr >= firstActivityDate
+        ? activityDates.has(dateStr)
+        : entryDates.has(dateStr);
+
+    if (isActive) {
+      streak++;
+      i++;
+    } else if (i === 0) {
+      i++; // today has no activity yet — check yesterday
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}
+
 export const getWeeklyStats = async (user, tz = 0) => {
   const tzStr = `${tz >= 0 ? "+" : ""}${tz} minutes`;
 
@@ -218,7 +270,6 @@ export const getWeeklyStats = async (user, tz = 0) => {
 
   const placeholders = days.map(() => "?").join(",");
 
-  // entries_added: calculate from entries table with tz adjustment (always accurate)
   const entryRows = await db_all(
     `SELECT DATE(datetime(createdAt, ?)) as date, COUNT(*) as entries_added
      FROM entries WHERE userid = ? AND DATE(datetime(createdAt, ?)) IN (${placeholders})
@@ -226,7 +277,6 @@ export const getWeeklyStats = async (user, tz = 0) => {
     [tzStr, user.id, tzStr, ...days],
   );
 
-  // reviews_count: from daily_activity (local dates going forward)
   const reviewRows = await db_all(
     `SELECT date, reviews_count FROM daily_activity
      WHERE user_id = ? AND date IN (${placeholders})`,
@@ -236,11 +286,16 @@ export const getWeeklyStats = async (user, tz = 0) => {
   const entriesMap = Object.fromEntries((entryRows ?? []).map((r) => [r.date, r.entries_added]));
   const reviewsMap = Object.fromEntries((reviewRows ?? []).map((r) => [r.date, r.reviews_count]));
 
-  return days.map((date) => ({
-    date,
-    entries_added: entriesMap[date] ?? 0,
-    reviews_count: reviewsMap[date] ?? 0,
-  }));
+  const streak = await computeStreak(user.id, tz);
+
+  return {
+    days: days.map((date) => ({
+      date,
+      entries_added: entriesMap[date] ?? 0,
+      reviews_count: reviewsMap[date] ?? 0,
+    })),
+    streak,
+  };
 };
 
 export const deleteEntryImg = (userId, filename) => {
