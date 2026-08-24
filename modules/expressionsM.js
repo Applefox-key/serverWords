@@ -186,12 +186,12 @@ export const getUnreadListByToken = async (
     labelid && labelid !== "null" ? ` AND expressions.labelid = ?` : "";
 
   const query = `
-    SELECT *, 
+    SELECT *,
       date(UNIXEPOCH()-?,'unixepoch') AS currentDate,
       date((nextDate-?)/1000,'unixepoch') AS scheduledDate,
       date(nextDate/1000,'unixepoch') AS rawDate,
       date() AS today
-    FROM expressions 
+    FROM expressions
     WHERE userid = ?
       AND stage < 9
       AND status = 'active'

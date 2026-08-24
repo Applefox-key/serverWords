@@ -194,4 +194,20 @@ router.delete("/content/:id", async (req, res) => {
   } catch (e) { sendError(res, e.message); }
 });
 
+// PATCH /admin/expressions/:id — update expression fields (stage, nextDate, inQueue, status, history, …)
+router.patch("/expressions/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body.data;
+    if (!data || Object.keys(data).length === 0) return sendError(res, "data is required");
+    // history arrives as JSON string — updateExpression expects a parsed array
+    if (data.history !== undefined) {
+      const str = typeof data.history === "string" ? data.history : JSON.stringify(data.history);
+      data.history = JSON.parse(str);
+    }
+    const result = await exp.updateExpression({ ...data, id: parseInt(id) });
+    result?.error ? sendError(res, result.error) : sendOk(res, "updated");
+  } catch (e) { sendError(res, e.message); }
+});
+
 export default router;
