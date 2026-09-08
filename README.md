@@ -68,3 +68,15 @@ The API manages user-specific data such as:
 ## API Architecture
 
 The application is built with Express and organized around domain-specific routes.
+
+### Tech Stack
+- Node.js
+- Express
+- SQLite3
+- JSON Web Tokens
+- Cookie-based authentication
+- Google OAuth
+- CORS
+- Multer
+- Nodemailer
+- Luxon
