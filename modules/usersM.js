@@ -6,10 +6,13 @@ import * as dotenv from "dotenv";
 import { saveImgAvatar } from "./avatars.js";
 import { sendError } from "../helpers/responseHelpers.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_dev_secret_change_in_production";
 const JWT_EXPIRES_IN = "30d";
+
+const generateApiToken = () => crypto.randomBytes(32).toString("hex");
 
 export const getAllUsers = async () => {
   try {
@@ -45,12 +48,14 @@ export const getUserByToken = async (token) => {
     try {
       decoded = jwt.verify(token, JWT_SECRET);
     } catch (jwtErr) {
-      // Not a valid JWT — fall back to legacy session lookup
+      // Not a valid JWT — try legacy session, then api_token
       const session = await db_get("SELECT * FROM sessions WHERE token = ?", [token]);
-      if (!session) return;
-      const row = await db_get("SELECT * FROM users WHERE id = ?", [session.userid]);
-      if (!row) return;
-      return row;
+      if (session) {
+        const row = await db_get("SELECT * FROM users WHERE id = ?", [session.userid]);
+        if (row) return row;
+      }
+      const byApiToken = await db_get("SELECT * FROM users WHERE api_token = ?", [token]);
+      return byApiToken || undefined;
     }
     // JWT valid — load user from DB to get fresh data
     const row = await db_get("SELECT * FROM users WHERE id = ?", [decoded.userid]);
@@ -123,22 +128,10 @@ export const updateUser = async (user, userid, set, img) => {
 export const createUser = async (set) => {
   try {
     let img = set.img;
-    // if (!img) img = "";
-    // else if (img.includes("blob")) {
-    //   await fbHelpers.setImgToStorage(usersList[num].id, img).then((res) => {
-    //     img = res;
-    //   });
-    // }
+    const api_token = generateApiToken();
     return await db_run(
-      `INSERT INTO users (name, email, password, img,role,settings) VALUES (?,?,?,?,?,?)`,
-      [
-        set.name,
-        set.email,
-        set.password,
-        img,
-        set.role || "user",
-        JSON.stringify(set.settings),
-      ]
+      `INSERT INTO users (name, email, password, img, role, settings, api_token) VALUES (?,?,?,?,?,?,?)`,
+      [set.name, set.email, set.password, img, set.role || "user", JSON.stringify(set.settings), api_token]
     );
   } catch (error) {
     sendError(res, error.message);
@@ -148,9 +141,10 @@ export const loginOrCreateGoogleUser = async ({ email, name, img }) => {
   try {
     let user = await getUserByEmail(email);
     if (!user) {
+      const api_token = generateApiToken();
       await db_run(
-        `INSERT INTO users (name, email, img, role, settings) VALUES (?,?,?,?,?)`,
-        [name, email, img, "user", null]
+        `INSERT INTO users (name, email, img, role, settings, api_token) VALUES (?,?,?,?,?,?)`,
+        [name, email, img, "user", null, api_token]
       );
       user = await getUserByEmail(email);
     }
@@ -171,9 +165,23 @@ export const deleteUser = async (user) => {
     sendError(res, error.message);
   }
 };
+export const getOrCreateApiToken = async (userid) => {
+  const user = await db_get("SELECT api_token FROM users WHERE id = ?", [userid]);
+  if (user?.api_token) return user.api_token;
+  const token = generateApiToken();
+  await db_run("UPDATE users SET api_token = ? WHERE id = ?", [token, userid]);
+  return token;
+};
+
+export const regenerateApiToken = async (userid) => {
+  const token = generateApiToken();
+  await db_run("UPDATE users SET api_token = ? WHERE id = ?", [token, userid]);
+  return token;
+};
+
 export const updateUserField = async (userid, field, value) => {
   if (
-    !["name", "email", "password", "img", "settings", "role"].includes(field)
+    !["name", "email", "password", "img", "settings", "role", "api_token"].includes(field)
   ) {
     throw new Error("Invalid field for update");
   }

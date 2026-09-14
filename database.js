@@ -301,6 +301,9 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
       )`, () => {});
 
+      // api_token for external integrations (e.g. Telegram bot)
+      db.run(`ALTER TABLE users ADD COLUMN api_token TEXT DEFAULT NULL`, () => {});
+
       // migrations table for one-time operations
       db.run(`CREATE TABLE IF NOT EXISTS migrations (key TEXT PRIMARY KEY)`, () => {});
 

@@ -1,4 +1,5 @@
 import * as usr from "../modules/usersM.js";
+import crypto from "crypto";
 import * as validator from "../helpers/validator.js";
 import express from "express";
 import bodyParser from "body-parser";
@@ -92,8 +93,21 @@ router.delete("/", async (req, res, next) => {
 router.get("/", async (req, res, next) => {
   try {
     let user = req.user;
-
+    // Lazy-init api_token for existing users who don't have one yet
+    if (!user.api_token) {
+      user.api_token = await usr.getOrCreateApiToken(user.id);
+    }
     sendResponse(res, user);
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
+// Regenerate api_token
+router.post("/api-token", async (req, res) => {
+  try {
+    const api_token = await usr.regenerateApiToken(req.user.id);
+    res.status(200).json({ api_token });
   } catch (error) {
     sendError(res, error.message);
   }
