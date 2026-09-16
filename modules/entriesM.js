@@ -147,6 +147,16 @@ export const getDue = async (user) => {
   }));
 };
 
+export const introduceEntry = async (user, id) => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  return await db_run(
+    `UPDATE entries SET next_review_at = ? WHERE id = ? AND userid = ?`,
+    [tomorrow.toISOString(), id, user.id]
+  );
+};
+
 export const reviewEntry = async (user, id, grade, mode, isDue = false, tz = 0) => {
   const entry = await getOne(user, id);
   if (!entry) return { error: "not found" };

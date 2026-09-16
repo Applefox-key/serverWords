@@ -51,6 +51,18 @@ router.post("/:id/review", async (req, res) => {
   }
 });
 
+// Mark entry as introduced — sets next_review_at to tomorrow without touching SR stats
+router.post("/:id/introduce", async (req, res) => {
+  try {
+    const result = await entries.introduceEntry(req.user, req.params.id);
+    if (result.error) return sendError(res, result.error);
+    const item = await entries.getOne(req.user, req.params.id);
+    res.status(200).json(item);
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
 // Get all entries for current user
 router.get("/", async (req, res) => {
   try {
