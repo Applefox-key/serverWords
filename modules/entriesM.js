@@ -10,17 +10,22 @@ function localDate(tz = 0) {
   return d.toISOString().slice(0, 10);
 }
 
-async function upsertDailyActivity(userId, entriesDelta, reviewsDelta, tz = 0) {
+async function upsertDailyActivity(userId, entriesDelta, reviewsDelta, tz = 0, gamesDelta = 0) {
   const today = localDate(tz);
   await db_run(
-    `INSERT INTO daily_activity (user_id, date, entries_added, reviews_count)
-     VALUES (?, ?, ?, ?)
+    `INSERT INTO daily_activity (user_id, date, entries_added, reviews_count, games_completed)
+     VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(user_id, date) DO UPDATE SET
-       entries_added = MAX(0, daily_activity.entries_added + excluded.entries_added),
-       reviews_count = MAX(0, daily_activity.reviews_count + excluded.reviews_count)`,
-    [userId, today, entriesDelta, reviewsDelta],
+       entries_added  = MAX(0, daily_activity.entries_added  + excluded.entries_added),
+       reviews_count  = MAX(0, daily_activity.reviews_count  + excluded.reviews_count),
+       games_completed = MAX(0, daily_activity.games_completed + excluded.games_completed)`,
+    [userId, today, entriesDelta, reviewsDelta, gamesDelta],
   );
 }
+
+export const logGameComplete = async (user, tz = 0) => {
+  await upsertDailyActivity(user.id, 0, 0, tz, 1);
+};
 
 export const getAll = async (user) => {
   const rows = await db_all(`SELECT * FROM entries WHERE userid = ?`, [user.id]);
@@ -215,6 +220,36 @@ export const decrementEntriesAdded = async (userId, tz = 0) => {
   );
 };
 
+async function computeLongestStreak(userId, tz = 0) {
+  const tzStr = `${tz >= 0 ? "+" : ""}${tz} minutes`;
+
+  const activityRows = await db_all(
+    `SELECT date FROM daily_activity
+     WHERE user_id = ? AND (entries_added > 0 OR reviews_count > 0 OR COALESCE(games_completed, 0) > 0)`,
+    [userId],
+  );
+  const entryDateRows = await db_all(
+    `SELECT DISTINCT DATE(datetime(createdAt, ?)) as date FROM entries WHERE userid = ?`,
+    [tzStr, userId],
+  );
+
+  const allDates = Array.from(
+    new Set([...(activityRows ?? []).map((r) => r.date), ...(entryDateRows ?? []).map((r) => r.date)]),
+  ).sort();
+
+  if (allDates.length === 0) return 0;
+
+  let longest = 1, current = 1;
+  for (let i = 1; i < allDates.length; i++) {
+    const prev = new Date(allDates[i - 1] + "T12:00:00Z");
+    const curr = new Date(allDates[i] + "T12:00:00Z");
+    const diff = Math.round((curr - prev) / 86400000);
+    if (diff === 1) { current++; longest = Math.max(longest, current); }
+    else current = 1;
+  }
+  return longest;
+}
+
 async function computeStreak(userId, tz = 0) {
   const tzStr = `${tz >= 0 ? "+" : ""}${tz} minutes`;
   const today = localDate(tz);
@@ -288,23 +323,90 @@ export const getWeeklyStats = async (user, tz = 0) => {
   );
 
   const reviewRows = await db_all(
-    `SELECT date, reviews_count FROM daily_activity
+    `SELECT date, reviews_count, COALESCE(games_completed, 0) as games_completed FROM daily_activity
      WHERE user_id = ? AND date IN (${placeholders})`,
     [user.id, ...days],
   );
 
   const entriesMap = Object.fromEntries((entryRows ?? []).map((r) => [r.date, r.entries_added]));
   const reviewsMap = Object.fromEntries((reviewRows ?? []).map((r) => [r.date, r.reviews_count]));
+  const gamesMap   = Object.fromEntries((reviewRows ?? []).map((r) => [r.date, r.games_completed]));
 
   const streak = await computeStreak(user.id, tz);
 
   return {
     days: days.map((date) => ({
       date,
-      entries_added: entriesMap[date] ?? 0,
-      reviews_count: reviewsMap[date] ?? 0,
+      entries_added:   entriesMap[date] ?? 0,
+      reviews_count:   reviewsMap[date] ?? 0,
+      games_completed: gamesMap[date]   ?? 0,
     })),
     streak,
+  };
+};
+
+export const getActivityHistory = async (user, tz = 0, weeks = 8) => {
+  const tzStr = `${tz >= 0 ? "+" : ""}${tz} minutes`;
+  const totalDays = weeks * 7;
+
+  const localToday = localDate(tz);
+  const days = Array.from({ length: totalDays }, (_, i) => {
+    const d = new Date(localToday + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() - (totalDays - 1 - i));
+    return d.toISOString().slice(0, 10);
+  });
+
+  const placeholders = days.map(() => "?").join(",");
+
+  const entryRows = await db_all(
+    `SELECT DATE(datetime(createdAt, ?)) as date, COUNT(*) as entries_added
+     FROM entries WHERE userid = ? AND DATE(datetime(createdAt, ?)) IN (${placeholders})
+     GROUP BY date`,
+    [tzStr, user.id, tzStr, ...days],
+  );
+
+  const activityRows = await db_all(
+    `SELECT date, reviews_count, COALESCE(games_completed, 0) as games_completed
+     FROM daily_activity WHERE user_id = ? AND date IN (${placeholders})`,
+    [user.id, ...days],
+  );
+
+  const entriesMap = Object.fromEntries((entryRows ?? []).map((r) => [r.date, r.entries_added]));
+  const reviewsMap = Object.fromEntries((activityRows ?? []).map((r) => [r.date, r.reviews_count]));
+  const gamesMap   = Object.fromEntries((activityRows ?? []).map((r) => [r.date, r.games_completed]));
+
+  const totalsRow = await db_get(
+    `SELECT SUM(entries_added) as total_entries,
+            SUM(reviews_count) as total_reviews,
+            SUM(COALESCE(games_completed, 0)) as total_games
+     FROM daily_activity WHERE user_id = ?`,
+    [user.id],
+  );
+
+  const bestDayRow = await db_get(
+    `SELECT MAX(entries_added + reviews_count + COALESCE(games_completed, 0)) as best_day
+     FROM daily_activity WHERE user_id = ?`,
+    [user.id],
+  );
+
+  const currentStreak = await computeStreak(user.id, tz);
+  const longestStreak = await computeLongestStreak(user.id, tz);
+
+  return {
+    days: days.map((date) => ({
+      date,
+      entries_added:   entriesMap[date] ?? 0,
+      reviews_count:   reviewsMap[date] ?? 0,
+      games_completed: gamesMap[date]   ?? 0,
+    })),
+    totals: {
+      entries: totalsRow?.total_entries ?? 0,
+      reviews: totalsRow?.total_reviews ?? 0,
+      games:   totalsRow?.total_games   ?? 0,
+    },
+    best_day:       bestDayRow?.best_day ?? 0,
+    current_streak: currentStreak,
+    longest_streak: longestStreak,
   };
 };
 

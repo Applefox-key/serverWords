@@ -304,6 +304,9 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
       // api_token for external integrations (e.g. Telegram bot)
       db.run(`ALTER TABLE users ADD COLUMN api_token TEXT DEFAULT NULL`, () => {});
 
+      // games_completed tracking in daily_activity
+      db.run(`ALTER TABLE daily_activity ADD COLUMN games_completed INTEGER DEFAULT 0`, () => {});
+
       // migrations table for one-time operations
       db.run(`CREATE TABLE IF NOT EXISTS migrations (key TEXT PRIMARY KEY)`, () => {});
 

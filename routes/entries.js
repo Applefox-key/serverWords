@@ -1,4 +1,5 @@
 import * as entries from "../modules/entriesM.js";
+
 import express from "express";
 import { sendError, sendResponse } from "../helpers/responseHelpers.js";
 import { uploadEntryImg } from "../helpers/multer.js";
@@ -16,6 +17,27 @@ router.get("/stats/weekly", async (req, res) => {
   try {
     const stats = await entries.getWeeklyStats(req.user, getTz(req));
     res.status(200).json(stats);
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
+// Activity history — heatmap + weekly breakdown
+router.get("/stats/history", async (req, res) => {
+  try {
+    const weeks = Math.min(Math.max(parseInt(req.query.weeks ?? "8", 10) || 8, 1), 26);
+    const stats = await entries.getActivityHistory(req.user, getTz(req), weeks);
+    res.status(200).json(stats);
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
+// Log a completed game session
+router.post("/stats/game-complete", async (req, res) => {
+  try {
+    await entries.logGameComplete(req.user, getTz(req));
+    res.status(200).json({ ok: true });
   } catch (error) {
     sendError(res, error.message);
   }
