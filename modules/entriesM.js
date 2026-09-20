@@ -257,7 +257,7 @@ async function computeStreak(userId, tz = 0) {
   // All active days from daily_activity
   const activityRows = await db_all(
     `SELECT date FROM daily_activity
-     WHERE user_id = ? AND (entries_added > 0 OR reviews_count > 0)
+     WHERE user_id = ? AND (entries_added > 0 OR reviews_count > 0 OR COALESCE(games_completed, 0) > 0)
      ORDER BY date DESC`,
     [userId],
   );
