@@ -67,6 +67,35 @@ export const setEntryTags = async (entryId, tagIds) => {
   );
 };
 
+// Add a tag to multiple entries at once (doesn't remove other tags)
+// Deletes existing (entryid, tagid) pairs first to avoid duplicates, then re-inserts
+export const addTagToEntries = async (user, tagId, entryIds) => {
+  if (!entryIds || entryIds.length === 0) return { message: "success" };
+
+  const tag = await db_get(
+    `SELECT id FROM entry_tags WHERE id = ? AND userid = ?`,
+    [tagId, user.id]
+  );
+  if (!tag) return { error: "tag not found" };
+
+  const inPlaceholders = entryIds.map(() => "?").join(", ");
+
+  await db_run(
+    `DELETE FROM entries_to_tags
+     WHERE tagid = ?
+       AND entryid IN (SELECT id FROM entries WHERE userid = ? AND id IN (${inPlaceholders}))`,
+    [tagId, user.id, ...entryIds]
+  );
+
+  return await db_run(
+    `INSERT INTO entries_to_tags (entryid, tagid)
+     SELECT e.id, ?
+     FROM entries e
+     WHERE e.userid = ? AND e.id IN (${inPlaceholders})`,
+    [tagId, user.id, ...entryIds]
+  );
+};
+
 // Get all entries with their tags for a user (used to enrich getAll response)
 export const getTagsForEntries = async (user) => {
   const rows = await db_all(

@@ -87,4 +87,21 @@ router.put("/entry/:entryId", async (req, res) => {
   }
 });
 
+// PUT /entry-tags/bulk-assign
+// Body: { data: { tagId: 5, entryIds: [1, 2, 3] } }
+// Adds a tag to multiple entries without removing their other tags
+router.put("/bulk-assign", async (req, res) => {
+  try {
+    const { tagId, entryIds } = req.body.data ?? {};
+    if (!tagId) return sendError(res, "tagId is required");
+    if (!Array.isArray(entryIds) || entryIds.length === 0) return sendError(res, "entryIds must be a non-empty array");
+
+    const result = await tags.addTagToEntries(req.user, tagId, entryIds);
+    if (result?.error) return sendError(res, result.error);
+    sendResult(res, result);
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
 export default router;
