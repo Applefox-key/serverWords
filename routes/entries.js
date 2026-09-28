@@ -125,7 +125,8 @@ router.post("/batch", async (req, res) => {
 // Create new entry
 router.post("/", uploadEntryImg.single("imgfile"), async (req, res) => {
   try {
-    const data = JSON.parse(req.body.data);
+    const raw = req.body.data;
+    const data = typeof raw === "string" ? JSON.parse(raw) : raw ?? req.body;
     if (req.file) data.img = req.file.filename;
     const result = await entries.createEntry(req.user, data, getTz(req));
     if (result.error) return sendError(res, result.error);
