@@ -161,6 +161,45 @@ export const editCollection = async (set, id) => {
   );
 };
 
+export const searchByCards = async (user, search) => {
+  const userid = user.id;
+  const term = `%${search}%`;
+
+  const rows = await db_all(
+    `SELECT DISTINCT
+      collections.id,
+      collections.name,
+      collections.note,
+      isPublic,
+      isFavorite,
+      collections.layout,
+      categories.name AS category,
+      collections.categoryid
+    FROM collections
+    JOIN content ON content.collectionid = collections.id
+    WHERE collections.userid = ?
+    AND (LOWER(content.question) LIKE LOWER(?) OR LOWER(content.answer) LIKE LOWER(?))
+    ORDER BY collections.name COLLATE NOCASE ASC`,
+    [userid, term, term]
+  );
+
+  if (!rows?.length) return [];
+
+  const result = [];
+  for (const row of rows) {
+    const cards = await db_all(
+      `SELECT id, question, answer FROM content
+       WHERE collectionid = ?
+       AND (LOWER(question) LIKE LOWER(?) OR LOWER(answer) LIKE LOWER(?))
+       LIMIT 2`,
+      [row.id, term, term]
+    );
+    result.push({ ...row, matchedCards: cards ?? [] });
+  }
+
+  return result;
+};
+
 //switch  collection attribute isPublic
 export const switchIsPublic = async (user, isPublic, collectionId) => {
   const userid = user.id;

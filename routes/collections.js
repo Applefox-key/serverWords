@@ -223,6 +223,18 @@ router.delete("/", async (req, res, next) => {
   }
 });
 
+// Search collections by card content
+router.get("/search-cards", async (req, res, next) => {
+  try {
+    const q = req.query.q?.trim();
+    if (!q) return sendResponse(res, []);
+    const result = await col.searchByCards(req.user, q);
+    sendResponse(res, result);
+  } catch (error) {
+    sendError(res, error.message);
+  }
+});
+
 //BY ID
 //Get user's one collection by id
 router.get("/:id", async (req, res, next) => {
