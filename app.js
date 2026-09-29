@@ -106,6 +106,7 @@ export async function autorisation(req, res, next) {
   if (!userRow) return sendError(res, "User's not found. Please relogin!", 403);
   req.user = userRow;
   req.token = token;
+  req.isApiToken = (token === userRow.api_token);
   if (req.user && req.user.role !== "admin") {
     try { await runDailyQueueUpdate(userRow); } catch (e) { console.error("runDailyQueueUpdate error:", e.message); }
   }

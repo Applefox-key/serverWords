@@ -96,6 +96,14 @@ export const addTagToEntries = async (user, tagId, entryIds) => {
   );
 };
 
+// Get or create the system "via API" tag for a user
+export const getOrCreateApiTag = async (user) => {
+  const name = "via API";
+  let tag = await db_get(`SELECT id FROM entry_tags WHERE userid = ? AND name = ?`, [user.id, name]);
+  if (!tag) tag = await db_get(`INSERT INTO entry_tags (name, userid) VALUES (?, ?) RETURNING id`, [name, user.id]);
+  return tag.id;
+};
+
 // Get all entries with their tags for a user (used to enrich getAll response)
 export const getTagsForEntries = async (user) => {
   const rows = await db_all(

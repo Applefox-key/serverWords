@@ -1,4 +1,5 @@
 import * as entries from "../modules/entriesM.js";
+import * as entryTags from "../modules/entryTagsM.js";
 
 import express from "express";
 import { sendError, sendResponse } from "../helpers/responseHelpers.js";
@@ -113,7 +114,13 @@ router.post("/batch", async (req, res) => {
     if (!Array.isArray(entriesData) || entriesData.length === 0)
       return sendError(res, "entries must be a non-empty array");
 
-    const result = await entries.createEntryBatch(req.user, entriesData, tagIds ?? [], getTz(req));
+    let resolvedTagIds = tagIds ?? [];
+    if (req.isApiToken) {
+      const apiTagId = await entryTags.getOrCreateApiTag(req.user);
+      if (!resolvedTagIds.includes(apiTagId)) resolvedTagIds = [...resolvedTagIds, apiTagId];
+    }
+
+    const result = await entries.createEntryBatch(req.user, entriesData, resolvedTagIds, getTz(req));
     if (result.error) return sendError(res, result.error);
 
     res.status(200).json(result);
@@ -130,6 +137,11 @@ router.post("/", uploadEntryImg.single("imgfile"), async (req, res) => {
     if (req.file) data.img = req.file.filename;
     const result = await entries.createEntry(req.user, data, getTz(req));
     if (result.error) return sendError(res, result.error);
+
+    if (req.isApiToken) {
+      const apiTagId = await entryTags.getOrCreateApiTag(req.user);
+      await entryTags.setEntryTags(result.id, [apiTagId]);
+    }
 
     // return the created entry
     const item = await entries.getOne(req.user, result.id);
