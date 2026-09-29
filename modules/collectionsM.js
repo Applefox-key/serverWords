@@ -161,26 +161,39 @@ export const editCollection = async (set, id) => {
   );
 };
 
-export const searchByCards = async (user, search) => {
+export const searchByCards = async (user, search, { categoryId, tagId, isFavorite, isPublic } = {}) => {
   const userid = user.id;
   const term = `%${search}%`;
+
+  const tagJoin = tagId
+    ? `JOIN collections_to_tags ctt ON ctt.collectionid = collections.id AND ctt.tagid = ${tagId}`
+    : "";
+
+  const filterClauses = [
+    isFavorite ? `AND collections.isFavorite = 1` : "",
+    isPublic  ? `AND collections.isPublic = 1`  : "",
+    categoryId != null ? `AND collections.categoryid = ${categoryId}` : "",
+  ].filter(Boolean).join(" ");
 
   const rows = await db_all(
     `SELECT DISTINCT
       collections.id,
       collections.name,
       collections.note,
-      isPublic,
-      isFavorite,
+      collections.isPublic,
+      collections.isFavorite,
       collections.layout,
       categories.name AS category,
       collections.categoryid
     FROM collections
+    ${tagJoin}
     JOIN content ON content.collectionid = collections.id
-    WHERE collections.userid = ?
-    AND (LOWER(content.question) LIKE LOWER(?) OR LOWER(content.answer) LIKE LOWER(?))
+    LEFT JOIN categories ON collections.categoryid = categories.id
+    WHERE collections.userid = ${userid}
+    ${filterClauses}
+    AND (LOWER(content.question) LIKE ? OR LOWER(content.answer) LIKE ?)
     ORDER BY collections.name COLLATE NOCASE ASC`,
-    [userid, term, term]
+    [term, term]
   );
 
   if (!rows?.length) return [];
@@ -190,7 +203,7 @@ export const searchByCards = async (user, search) => {
     const cards = await db_all(
       `SELECT id, question, answer FROM content
        WHERE collectionid = ?
-       AND (LOWER(question) LIKE LOWER(?) OR LOWER(answer) LIKE LOWER(?))
+       AND (LOWER(question) LIKE ? OR LOWER(answer) LIKE ?)
        LIMIT 2`,
       [row.id, term, term]
     );

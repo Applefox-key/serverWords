@@ -228,7 +228,12 @@ router.get("/search-cards", async (req, res, next) => {
   try {
     const q = req.query.q?.trim();
     if (!q) return sendResponse(res, []);
-    const result = await col.searchByCards(req.user, q);
+    const options = {};
+    if (req.query.categoryId) options.categoryId = parseInt(req.query.categoryId);
+    if (req.query.tagId) options.tagId = parseInt(req.query.tagId);
+    if (req.query.isFavorite) options.isFavorite = true;
+    if (req.query.isPublic) options.isPublic = true;
+    const result = await col.searchByCards(req.user, q, options);
     sendResponse(res, result);
   } catch (error) {
     sendError(res, error.message);
