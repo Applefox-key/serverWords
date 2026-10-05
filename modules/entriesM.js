@@ -1,6 +1,6 @@
 import { db_get, db_all, db_run } from "../helpers/dbAsync.js";
 import { getTagsForEntries, getByEntry } from "./entryTagsM.js";
-import { applyReview, easeToMastery } from "../helpers/spacedRepetition.js";
+import { applyReview, easeToMastery, addDays } from "../helpers/spacedRepetition.js";
 import fs from "fs";
 import path from "path";
 
@@ -152,13 +152,10 @@ export const getDue = async (user) => {
   }));
 };
 
-export const introduceEntry = async (user, id) => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
+export const introduceEntry = async (user, id, tz = 0) => {
   return await db_run(
     `UPDATE entries SET next_review_at = ? WHERE id = ? AND userid = ?`,
-    [tomorrow.toISOString(), id, user.id]
+    [addDays(1, tz), id, user.id]
   );
 };
 

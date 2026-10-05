@@ -9,7 +9,7 @@ const MAX_GRADE   = { flashcard: 5,   quiz: 4,   match: 4,   puzzle: 4,   write:
 const MAX_INTERVAL = 730;          // cap at 2 years — prevents dates beyond year 9999 (SQLite lexicographic bug)
 const MAX_INTERVAL_PREMASTER = 21; // cards below mastery=5 are never scheduled more than 3 weeks out
 
-function addDays(days, tz = 0) {
+export function addDays(days, tz = 0) {
   const date = new Date();
   date.setMinutes(date.getMinutes() + tz); // shift to local time
   date.setUTCHours(0, 0, 0, 0);           // snap to local midnight (in shifted space)

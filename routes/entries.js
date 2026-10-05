@@ -77,7 +77,7 @@ router.post("/:id/review", async (req, res) => {
 // Mark entry as introduced — sets next_review_at to tomorrow without touching SR stats
 router.post("/:id/introduce", async (req, res) => {
   try {
-    const result = await entries.introduceEntry(req.user, req.params.id);
+    const result = await entries.introduceEntry(req.user, req.params.id, getTz(req));
     if (result.error) return sendError(res, result.error);
     const item = await entries.getOne(req.user, req.params.id);
     res.status(200).json(item);
