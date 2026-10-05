@@ -169,7 +169,7 @@ export const reviewEntry = async (user, id, grade, mode, isDue = false, tz = 0) 
   const today = localDate(tz);
   const isFirstReviewToday = entry.last_reviewed_at?.slice(0, 10) !== today;
 
-  const srFields = applyReview(entry, grade, mode, isDue);
+  const srFields = applyReview(entry, grade, mode, isDue, tz);
   if (srFields === null) return { skipped: true };
 
   const result = await updateEntry(user, id, srFields);

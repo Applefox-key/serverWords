@@ -9,9 +9,12 @@ const MAX_GRADE   = { flashcard: 5,   quiz: 4,   match: 4,   puzzle: 4,   write:
 const MAX_INTERVAL = 730;          // cap at 2 years — prevents dates beyond year 9999 (SQLite lexicographic bug)
 const MAX_INTERVAL_PREMASTER = 21; // cards below mastery=5 are never scheduled more than 3 weeks out
 
-function addDays(days) {
+function addDays(days, tz = 0) {
   const date = new Date();
-  date.setDate(date.getDate() + days);
+  date.setMinutes(date.getMinutes() + tz); // shift to local time
+  date.setUTCHours(0, 0, 0, 0);           // snap to local midnight (in shifted space)
+  date.setUTCDate(date.getUTCDate() + days);
+  date.setMinutes(date.getMinutes() - tz); // shift back to UTC
   return date.toISOString();
 }
 
@@ -21,7 +24,7 @@ function addDays(days) {
  * @param {0|3|4|5} grade - Again=0, Hard=3, Good=4, Easy=5
  * @param {'flashcard'|'quiz'|'match'|'puzzle'|'write'} mode
  */
-export function applyReview(entry, grade, mode, isDue = false) {
+export function applyReview(entry, grade, mode, isDue = false, tz = 0) {
   const weight = WEIGHTS[mode] ?? 1.0;
   const now = new Date().toISOString();
 
@@ -53,7 +56,7 @@ export function applyReview(entry, grade, mode, isDue = false) {
       repetitions:      Math.max(0, reps - weight),
       interval_days:    recoveryInterval,
       ease_factor:      newEase,
-      next_review_at:   addDays(recoveryInterval),
+      next_review_at:   addDays(recoveryInterval, tz),
       last_reviewed_at: now,
     };
   }
@@ -100,7 +103,7 @@ export function applyReview(entry, grade, mode, isDue = false) {
     repetitions: newReps,
     interval_days: cappedInterval,
     ease_factor: newEase,
-    next_review_at: addDays(cappedInterval),
+    next_review_at: addDays(cappedInterval, tz),
     last_reviewed_at: now,
   };
 }
